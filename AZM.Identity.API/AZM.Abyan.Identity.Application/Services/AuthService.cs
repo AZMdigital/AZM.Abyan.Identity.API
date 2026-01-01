@@ -1,6 +1,6 @@
-using AZM.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 
-namespace AZM.Identity.Application.Services;
+namespace AZM.Abyan.Identity.Application.Services;
 
 public class AuthService : IAuthService
 {

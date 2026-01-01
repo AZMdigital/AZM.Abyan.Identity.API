@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Entities\Form.cs" />
+    <Compile Remove="Entities\FormSubmission.cs" />
+    <Compile Remove="Entities\FormVersion.cs" />
+    <Compile Remove="Entities\OssFile.cs" />
+  </ItemGroup>
+
 </Project>

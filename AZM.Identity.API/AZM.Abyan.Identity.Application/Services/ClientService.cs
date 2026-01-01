@@ -1,6 +1,6 @@
-using AZM.Identity.Application.DTOs.Clients;
+using AZM.Abyan.Identity.Application.DTOs.Clients;
 
-namespace AZM.Identity.Application.Services;
+namespace AZM.Abyan.Identity.Application.Services;
 
 public class ClientService : IClientService
 {

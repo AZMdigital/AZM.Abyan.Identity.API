@@ -1,16 +1,16 @@
-using AZM.Identity.Application.DTOs.Auth;
-using AZM.Identity.Application.DTOs.Clients;
-using AZM.Identity.Application.DTOs.Groups;
-using AZM.Identity.Application.DTOs.Roles;
-using AZM.Identity.Application.DTOs.Users;
-using AZM.Identity.Application.Models;
-using AZM.Identity.Application.Services;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.DTOs.Clients;
+using AZM.Abyan.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.Roles;
+using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.Models;
+using AZM.Abyan.Identity.Application.Services;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace AZM.Identity.Infrastructure.Services;
+namespace AZM.Abyan.Identity.Infrastructure.Services;
 
 public class KeycloakService : IKeycloakService
 {
@@ -181,7 +181,7 @@ public class KeycloakService : IKeycloakService
 
         var updatePayload = new
         {
-            enabled = enabled
+            enabled
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(updatePayload);

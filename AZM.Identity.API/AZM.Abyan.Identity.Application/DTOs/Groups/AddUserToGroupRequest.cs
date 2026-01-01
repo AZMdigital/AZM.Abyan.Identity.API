@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Groups;
+namespace AZM.Abyan.Identity.Application.DTOs.Groups;
 
 public class AddUserToGroupRequest
 {

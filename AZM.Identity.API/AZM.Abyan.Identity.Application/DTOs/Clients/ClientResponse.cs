@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Clients;
+namespace AZM.Abyan.Identity.Application.DTOs.Clients;
 
 public class ClientResponse
 {

@@ -1,6 +1,6 @@
-using AZM.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.Groups;
 
-namespace AZM.Identity.Application.Services;
+namespace AZM.Abyan.Identity.Application.Services;
 
 public class GroupService : IGroupService
 {

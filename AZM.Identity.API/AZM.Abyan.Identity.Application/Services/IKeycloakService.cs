@@ -1,10 +1,10 @@
-using AZM.Identity.Application.DTOs.Auth;
-using AZM.Identity.Application.DTOs.Clients;
-using AZM.Identity.Application.DTOs.Groups;
-using AZM.Identity.Application.DTOs.Roles;
-using AZM.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.DTOs.Clients;
+using AZM.Abyan.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.Roles;
+using AZM.Abyan.Identity.Application.DTOs.Users;
 
-namespace AZM.Identity.Application.Services;
+namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IKeycloakService
 {

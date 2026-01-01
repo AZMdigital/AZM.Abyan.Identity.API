@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.Models;
+namespace AZM.Abyan.Identity.Application.Models;
 
 public class KeycloakConfiguration
 {

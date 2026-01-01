@@ -1,8 +1,8 @@
-using AZM.Identity.Application.DTOs.Users;
-using AZM.Identity.Application.Services;
+using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AZM.Identity.API.Controllers;
+namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

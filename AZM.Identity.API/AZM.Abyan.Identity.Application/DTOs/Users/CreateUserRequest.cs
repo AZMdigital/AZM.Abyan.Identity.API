@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Users;
+namespace AZM.Abyan.Identity.Application.DTOs.Users;
 
 public class CreateUserRequest
 {

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AZM.Identity.Domain\AZM.Abyan.Identity.Domain.csproj" />
+    <ProjectReference Include="..\AZM.Abyan.Identity.Domain\AZM.Abyan.Identity.Domain.csproj" />
   </ItemGroup>
 
 </Project>

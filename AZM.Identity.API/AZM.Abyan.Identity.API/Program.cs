@@ -61,6 +61,34 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
+    var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
+    var realm = keycloakSettings?.Realm ?? "Abyan";
+
+    options.Authority = $"{keycloakUrl}/realms/{realm}";
+    options.RequireHttpsMetadata = false; // For local development
+
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuers = new[]
+        {
+            $"{keycloakUrl}/realms/{realm}",
+            $"{keycloakUrl}/realms/master" // Allow master realm tokens for super admin
+        },
+        ValidateAudience = false, // Disabled for simplicity in admin tool
+        ValidateLifetime = true
+    };
+});
+
 // Keycloak configuration
 builder.Services.Configure<KeycloakConfiguration>(
     builder.Configuration.GetSection("Keycloak"));
@@ -79,6 +107,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
@@ -98,6 +127,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

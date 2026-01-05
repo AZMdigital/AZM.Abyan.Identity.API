@@ -14,16 +14,11 @@ using System.Text.Json.Serialization;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class KeycloakService : IKeycloakService
+public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config) : IKeycloakService
 {
-    private readonly HttpClient _httpClient;
-    private readonly KeycloakConfiguration _config;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly KeycloakConfiguration _config = config.Value;
 
-    public KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config)
-    {
-        _httpClient = httpClient;
-        _config = config.Value;
-    }
     public async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_config.Realm}/protocol/openid-connect/token")
@@ -247,7 +242,7 @@ public class KeycloakService : IKeycloakService
         response.EnsureSuccessStatusCode();
 
         var roles = await response.Content.ReadFromJsonAsync<List<ClientRoleResponse>>(cancellationToken: cancellationToken);
-        return roles ?? new List<ClientRoleResponse>();
+        return roles ?? [];
     }
 
     public async Task AssignClientRoleToUserAsync(string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default)

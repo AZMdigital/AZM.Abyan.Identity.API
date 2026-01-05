@@ -98,9 +98,13 @@ public class PermissionSyncService : IPermissionSyncService
                 _logger.LogInformation($"Authorization Services not enabled for client. Enabling now...");
                 await _keycloakService.UpdateClientAsync(clientUuid, new UpdateClientRequest
                 {
+                    ClientId = targetClient.ClientId,
                     Name = targetClient.Name,
                     Description = targetClient.Description,
                     Enabled = targetClient.Enabled,
+                    Protocol = targetClient.Protocol,
+                    PublicClient = false, // Must be confidential for AuthZ/ServiceAccounts
+                    BearerOnly = false,
                     ServiceAccountsEnabled = true, // Required for AuthZ often
                     AuthorizationServicesEnabled = true,
                     RedirectUris = targetClient.RedirectUris,
@@ -214,9 +218,9 @@ public class PermissionSyncService : IPermissionSyncService
                         keycloakAuthzPermId = await _keycloakService.CreateScopePermissionAsync(
                             clientUuid, 
                             authzPermissionName, 
-                            new[] { resourceName }, 
-                            new[] { permDef.Action }, 
-                            new[] { policyName }, 
+                            [resourceName], 
+                            [permDef.Action], 
+                            [policyName], 
                             adminToken, 
                             cancellationToken);
                         _logger.LogInformation($"Successfully created Permission '{authzPermissionName}' (ID: {keycloakAuthzPermId}).");

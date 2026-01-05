@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace AZM.Abyan.Identity.API.Middleware;
 
-public class PermissionMiddleware
+public class PermissionMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-
-    public PermissionMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
+    private readonly RequestDelegate _next = next;
 
     public async Task InvokeAsync(HttpContext context)
     {

@@ -3,6 +3,7 @@ using System;
 using AZM.Abyan.Identity.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AZM.Abyan.Identity.Persistence.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
-    partial class IdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104101530_intialpermisson")]
+    partial class intialpermisson
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,15 +53,6 @@ namespace AZM.Abyan.Identity.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("KeycloakPermissionId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("KeycloakResourceId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("KeycloakScopeId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -66,9 +60,6 @@ namespace AZM.Abyan.Identity.Persistence.Migrations
                     b.Property<string>("Resource")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("Synced")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

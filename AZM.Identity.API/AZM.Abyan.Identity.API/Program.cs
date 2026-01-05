@@ -109,6 +109,7 @@ builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
 
 var app = builder.Build();
 
@@ -129,7 +130,23 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AZM.Abyan.Identity.API.Middleware.PermissionMiddleware>();
 
 app.MapControllers();
+
+// Sync Permissions on Startup
+using (var scope = app.Services.CreateScope())
+{
+    var permissionSyncService = scope.ServiceProvider.GetRequiredService<IPermissionSyncService>();
+    try 
+    {
+        await permissionSyncService.SyncPermissionsAsync(System.Reflection.Assembly.GetExecutingAssembly());
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Failed to sync permissions on startup.");
+    }
+}
 
 app.Run();

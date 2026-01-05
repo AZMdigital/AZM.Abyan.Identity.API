@@ -21,6 +21,8 @@ public class IdentityDbContext : DbContext
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<TenantUserRole> TenantUserRoles { get; set; }
+    public DbSet<Permission> Permissions { get; set; }
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

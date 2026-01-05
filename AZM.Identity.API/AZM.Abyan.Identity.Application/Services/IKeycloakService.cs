@@ -4,6 +4,7 @@ using AZM.Abyan.Identity.Application.DTOs.Groups;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -66,5 +67,16 @@ public interface IKeycloakService
 
     // Admin token helper
     Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default);
+
+    // Authorization Services (UMA)
+    Task<ResourceDto?> GetResourceAsync(string clientId, string resourceName, string adminToken, CancellationToken cancellationToken = default);
+    Task<string> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
+
+    Task<PolicyDto?> GetPolicyAsync(string clientId, string policyName, string adminToken, CancellationToken cancellationToken = default);
+    Task<string> CreateRolePolicyAsync(string clientId, string policyName, IEnumerable<string> roleNames, string adminToken, CancellationToken cancellationToken = default);
+    
+    Task<PermissionDto?> GetPermissionAsync(string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default);
+    Task<string> CreateScopePermissionAsync(string clientId, string permissionName, IEnumerable<string> resources, IEnumerable<string> scopes, IEnumerable<string> policies, string adminToken, CancellationToken cancellationToken = default);
 }
 

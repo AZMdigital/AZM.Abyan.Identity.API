@@ -8,4 +8,5 @@ public class UpdateClientRequest
     public bool ServiceAccountsEnabled { get; set; }
     public List<string> RedirectUris { get; set; } = new();
     public List<string> WebOrigins { get; set; } = new();
+    public bool AuthorizationServicesEnabled { get; set; }
 }

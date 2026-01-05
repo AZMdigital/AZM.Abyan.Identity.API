@@ -8,5 +8,7 @@ public class ClientResponse
     public string Description { get; set; } = string.Empty;
     public bool Enabled { get; set; }
     public string Protocol { get; set; } = string.Empty;
+    public List<string> RedirectUris { get; set; } = new();
+    public List<string> WebOrigins { get; set; } = new();
+    public bool AuthorizationServicesEnabled { get; set; }
 }
-

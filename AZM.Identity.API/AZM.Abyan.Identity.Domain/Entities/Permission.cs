@@ -6,14 +6,13 @@ public class Permission : BaseEntity
 {
     public required string Name { get; set; }
     public string? Description { get; set; }
-    
+    public Guid? KeycloakPermissionId { get; set; }
+
     // Format: api:{controller}:{action}
-    public string Resource { get; set; } = string.Empty;
-    public string Action { get; set; } = string.Empty;
-    
-    // Keycloak mapping fields
-    public string? KeycloakResourceId { get; set; }
-    public string? KeycloakScopeId { get; set; }
-    public string? KeycloakPermissionId { get; set; }
-    public bool Synced { get; set; } = false;
+    public Guid ScopeId { get; set; }
+    public Scope Scope { get; set; } = null!;
+    public Guid ResourceId { get; set; }
+    public Resource Resources { get; set; } = null!;
+    public Guid PolicyId { get; set; }
+    public Policy Policy { get; set; } = null!;
 }

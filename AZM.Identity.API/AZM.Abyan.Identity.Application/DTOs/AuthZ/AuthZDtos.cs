@@ -5,7 +5,7 @@ namespace AZM.Abyan.Identity.Application.DTOs.AuthZ;
 public class ResourceDto
 {
     [JsonPropertyName("_id")]
-    public string? Id { get; set; }
+    public Guid? Id { get; set; }
     
     [JsonPropertyName("name")]
     public required string Name { get; set; }

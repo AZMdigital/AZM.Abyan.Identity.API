@@ -13,4 +13,8 @@
     <Compile Remove="Entities\OssFile.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Enums\" />
+  </ItemGroup>
+
 </Project>

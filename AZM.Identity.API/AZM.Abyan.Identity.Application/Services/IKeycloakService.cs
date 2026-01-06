@@ -70,7 +70,7 @@ public interface IKeycloakService
 
     // Authorization Services (UMA)
     Task<ResourceDto?> GetResourceAsync(string clientId, string resourceName, string adminToken, CancellationToken cancellationToken = default);
-    Task<string> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
+    Task<Guid> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
     Task UpdateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
 
     Task<PolicyDto?> GetPolicyAsync(string clientId, string policyName, string adminToken, CancellationToken cancellationToken = default);

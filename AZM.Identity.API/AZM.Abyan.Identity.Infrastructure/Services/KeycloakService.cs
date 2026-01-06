@@ -833,7 +833,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<string> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{_config.Realm}/clients/{clientId}/authz/resource-server/resource";
 
@@ -850,7 +850,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
         response.EnsureSuccessStatusCode();
 
         var created = await response.Content.ReadFromJsonAsync<ResourceDto>(cancellationToken: cancellationToken);
-        return created?.Id ?? string.Empty;
+        return created?.Id ?? Guid.Empty;
     }
 
     public async Task UpdateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default)

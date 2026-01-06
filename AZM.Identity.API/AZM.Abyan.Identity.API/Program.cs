@@ -15,8 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// OpenAPI
-builder.Services.AddOpenApi();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -123,7 +121,6 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger";
     });
 
-    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();

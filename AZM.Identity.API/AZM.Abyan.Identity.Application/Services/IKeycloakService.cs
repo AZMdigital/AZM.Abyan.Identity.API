@@ -1,10 +1,12 @@
-using AZM.Identity.Application.DTOs.Auth;
-using AZM.Identity.Application.DTOs.Clients;
-using AZM.Identity.Application.DTOs.Groups;
-using AZM.Identity.Application.DTOs.Roles;
-using AZM.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.DTOs.Clients;
+using AZM.Abyan.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.Realms;
+using AZM.Abyan.Identity.Application.DTOs.Roles;
+using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 
-namespace AZM.Identity.Application.Services;
+namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IKeycloakService
 {
@@ -15,24 +17,66 @@ public interface IKeycloakService
 
     // Users
     Task<string> CreateUserAsync(CreateUserRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateUserAsync(string userId, UpdateUserRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteUserAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task<List<UserResponse>> GetUsersAsync(string adminToken, CancellationToken cancellationToken = default);
     Task<UserResponse?> GetUserByIdAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task EnableUserAsync(string userId, bool enabled, string adminToken, CancellationToken cancellationToken = default);
+    Task ResetUserPasswordAsync(string userId, ResetPasswordRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task SendVerifyEmailAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
 
     // Roles
     Task<List<ClientRoleResponse>> GetClientRolesAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task AssignClientRoleToUserAsync(string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default);
     Task RemoveClientRoleFromUserAsync(string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default);
+    Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteClientRoleAsync(string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default);
 
     // Clients
     Task<List<ClientResponse>> GetClientsAsync(string adminToken, CancellationToken cancellationToken = default);
     Task<ClientResponse?> GetClientByIdAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
+    Task CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateClientAsync(string clientId, UpdateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteClientAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
 
     // Groups
     Task<List<GroupResponse>> GetGroupsAsync(string adminToken, CancellationToken cancellationToken = default);
+    Task<GroupResponse?> GetGroupByIdAsync(string groupId, string adminToken, CancellationToken cancellationToken = default);
+    Task CreateGroupAsync(CreateGroupRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateGroupAsync(string groupId, UpdateGroupRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteGroupAsync(string groupId, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<UserResponse>> GetGroupMembersAsync(string groupId, string adminToken, CancellationToken cancellationToken = default);
     Task AddUserToGroupAsync(string userId, string groupId, string adminToken, CancellationToken cancellationToken = default);
+    Task RemoveUserFromGroupAsync(string userId, string groupId, string adminToken, CancellationToken cancellationToken = default);
+
+    // Realms (Multi-Tenancy)
+    Task<List<RealmResponse>> GetAllRealmsAsync(string adminToken, CancellationToken cancellationToken = default);
+    Task<RealmResponse?> GetRealmByNameAsync(string realmName, string adminToken, CancellationToken cancellationToken = default);
+    Task CreateRealmAsync(CreateRealmRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateRealmAsync(string realmName, UpdateRealmRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateRealmPasswordPolicyAsync(string realmName, UpdateRealmPasswordPolicyRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteRealmAsync(string realmName, string adminToken, CancellationToken cancellationToken = default);
+
+    // Realm Roles
+    Task<List<RealmRoleResponse>> GetRealmRolesAsync(string realm, string adminToken, CancellationToken cancellationToken = default);
+    Task CreateRealmRoleAsync(CreateRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateRealmRoleAsync(string realm, string roleName, UpdateRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DeleteRealmRoleAsync(string realm, string roleName, string adminToken, CancellationToken cancellationToken = default);
+    Task AssignRealmRoleToUserAsync(AssignRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task RemoveRealmRoleFromUserAsync(AssignRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
 
     // Admin token helper
     Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default);
+
+    // Authorization Services (UMA)
+    Task<ResourceDto?> GetResourceAsync(string clientId, string resourceName, string adminToken, CancellationToken cancellationToken = default);
+    Task<Guid> CreateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
+    Task UpdateResourceAsync(string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
+
+    Task<PolicyDto?> GetPolicyAsync(string clientId, string policyName, string adminToken, CancellationToken cancellationToken = default);
+    Task<string> CreateRolePolicyAsync(string clientId, string policyName, IEnumerable<string> roleNames, string adminToken, CancellationToken cancellationToken = default);
+    
+    Task<PermissionDto?> GetPermissionAsync(string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default);
+    Task<string> CreateScopePermissionAsync(string clientId, string permissionName, IEnumerable<string> resources, IEnumerable<string> scopes, IEnumerable<string> policies, string adminToken, CancellationToken cancellationToken = default);
 }
 

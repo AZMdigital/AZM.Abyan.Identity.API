@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Roles;
+namespace AZM.Abyan.Identity.Application.DTOs.Roles;
 
 public class AssignRoleRequest
 {

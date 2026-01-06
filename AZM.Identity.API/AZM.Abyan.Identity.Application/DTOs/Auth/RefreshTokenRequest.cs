@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Auth;
+namespace AZM.Abyan.Identity.Application.DTOs.Auth;
 
 public class RefreshTokenRequest
 {

@@ -1,8 +1,8 @@
-using AZM.Identity.Application.DTOs.Users;
-using AZM.Identity.Application.Services;
+using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AZM.Identity.API.Controllers;
+namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -22,6 +22,34 @@ public class UsersController : ControllerBase
         {
             var userId = await _userService.CreateUserAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetUserById), new { id = userId }, new { userId });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.UpdateUserAsync(id, request, cancellationToken);
+            return Ok(new { message = $"User {id} updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteUser(string id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.DeleteUserAsync(id, cancellationToken);
+            return Ok(new { message = $"User {id} deleted successfully" });
         }
         catch (Exception ex)
         {
@@ -71,6 +99,34 @@ public class UsersController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/reset-password")]
+    public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
+            return Ok(new { message = $"Password for user {id} reset successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/send-verify-email")]
+    public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.SendVerifyEmailAsync(id, cancellationToken);
+            return Ok(new { message = $"Verification email sent to user {id} successfully" });
         }
         catch (Exception ex)
         {

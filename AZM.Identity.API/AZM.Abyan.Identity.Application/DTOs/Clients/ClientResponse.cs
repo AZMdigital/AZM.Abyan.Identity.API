@@ -1,4 +1,4 @@
-namespace AZM.Identity.Application.DTOs.Clients;
+namespace AZM.Abyan.Identity.Application.DTOs.Clients;
 
 public class ClientResponse
 {
@@ -8,5 +8,9 @@ public class ClientResponse
     public string Description { get; set; } = string.Empty;
     public bool Enabled { get; set; }
     public string Protocol { get; set; } = string.Empty;
+    public bool PublicClient { get; set; }
+    public bool BearerOnly { get; set; }
+    public List<string> RedirectUris { get; set; } = new();
+    public List<string> WebOrigins { get; set; } = new();
+    public bool AuthorizationServicesEnabled { get; set; }
 }
-

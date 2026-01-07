@@ -3,16 +3,8 @@
   "WorkspaceRootPath": "D:\\AZM-IdentityService\\LocalPolicy\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\controllers\\localauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\controllers\\localauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
@@ -21,6 +13,18 @@
     {
       "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\services\\keycloakauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\services\\keycloakauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\controllers\\localauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\controllers\\localauthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|solutionrelative:localpolicy\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BEF85AFE-E9F3-4648-B90A-93A71A0B8314}|LocalPolicy\\LocalPolicy.csproj|d:\\azm-identityservice\\localpolicy\\localpolicy\\attributes\\requirepermissionattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -34,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 14,
+          "SelectedChildIndex": 19,
           "Children": [
             {
               "$type": "Bookmark",
@@ -90,7 +94,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
+              "Title": "KeycloakAuthService.cs",
+              "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Services\\KeycloakAuthService.cs",
+              "RelativeDocumentMoniker": "LocalPolicy\\Services\\KeycloakAuthService.cs",
+              "ToolTip": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Services\\KeycloakAuthService.cs",
+              "RelativeToolTip": "LocalPolicy\\Services\\KeycloakAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-06T13:41:26.404Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "RequirePermissionAttribute.cs",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Attributes\\RequirePermissionAttribute.cs",
               "RelativeDocumentMoniker": "LocalPolicy\\Attributes\\RequirePermissionAttribute.cs",
@@ -98,12 +114,11 @@
               "RelativeToolTip": "LocalPolicy\\Attributes\\RequirePermissionAttribute.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-30T11:32:58.755Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-30T11:32:58.755Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 5,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Program.cs",
               "RelativeDocumentMoniker": "LocalPolicy\\Program.cs",
@@ -111,38 +126,35 @@
               "RelativeToolTip": "LocalPolicy\\Program.cs",
               "ViewState": "AgIAADUAAAAAAAAAAAAAAFAAAABSAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-29T12:42:13.178Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-29T12:42:13.178Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "appsettings.Development.json",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\appsettings.Development.json",
               "RelativeDocumentMoniker": "LocalPolicy\\appsettings.Development.json",
               "ToolTip": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\appsettings.Development.json",
               "RelativeToolTip": "LocalPolicy\\appsettings.Development.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-29T09:48:54.309Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-29T09:48:54.309Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 2,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\appsettings.json",
               "RelativeDocumentMoniker": "LocalPolicy\\appsettings.json",
               "ToolTip": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\appsettings.json",
               "RelativeToolTip": "LocalPolicy\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAADAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-29T09:35:34.419Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-29T09:35:34.419Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "LocalAuthController.cs",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Controllers\\LocalAuthController.cs",
               "RelativeDocumentMoniker": "LocalPolicy\\Controllers\\LocalAuthController.cs",
@@ -150,18 +162,17 @@
               "RelativeToolTip": "LocalPolicy\\Controllers\\LocalAuthController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-29T09:34:59.539Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-29T09:34:59.539Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "AuthController.cs",
               "DocumentMoniker": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "LocalPolicy\\Controllers\\AuthController.cs",
               "ToolTip": "D:\\AZM-IdentityService\\LocalPolicy\\LocalPolicy\\Controllers\\AuthController.cs",
               "RelativeToolTip": "LocalPolicy\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-29T09:34:56.993Z",
               "EditorCaption": ""

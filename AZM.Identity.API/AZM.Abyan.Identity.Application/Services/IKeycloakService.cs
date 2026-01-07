@@ -1,10 +1,11 @@
+using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Groups;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -34,7 +35,7 @@ public interface IKeycloakService
 
     // Clients
     Task<List<ClientResponse>> GetClientsAsync(string adminToken, CancellationToken cancellationToken = default);
-    Task<ClientResponse?> GetClientByIdAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
+    Task<JsonElement?> GetClientByIdAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task UpdateClientAsync(string clientId, UpdateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DeleteClientAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);

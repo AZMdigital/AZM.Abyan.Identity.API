@@ -7,5 +7,8 @@ public class KeycloakConfiguration
     public string ClientId { get; set; } = string.Empty;
     public string AdminUsername { get; set; } = string.Empty;
     public string AdminPassword { get; set; } = string.Empty;
+    public string RealmLocal { get; set; } = string.Empty;
+    public string ClientIdLocal { get; set; } = string.Empty;
+    public string ClientSecret { get; set; } = string.Empty;
 }
 

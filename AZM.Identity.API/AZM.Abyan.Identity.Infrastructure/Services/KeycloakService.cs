@@ -69,10 +69,19 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
             new("password", password)
         };
 
+        if (!string.IsNullOrEmpty(_config.ClientSecret))
+        {
+            requestBody.Add(new KeyValuePair<string, string>("client_secret", _config.ClientSecret));
+        }
+
         var content = new FormUrlEncodedContent(requestBody);
         var response = await _httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException($"Keycloak authentication failed ({(int)response.StatusCode} {response.StatusCode}): {errorContent}");
+        }
 
         var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
 

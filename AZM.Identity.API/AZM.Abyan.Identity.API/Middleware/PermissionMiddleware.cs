@@ -31,6 +31,13 @@ public class PermissionMiddleware(RequestDelegate next)
             return;
         }
 
+        // Allow AuthController actions to bypass authentication (login, refresh, logout)
+        if (actionDescriptor.ControllerName.Equals("Auth", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         // Ensure user is authenticated first
         if (context.User.Identity?.IsAuthenticated != true)
         {
@@ -42,13 +49,11 @@ public class PermissionMiddleware(RequestDelegate next)
         var action = actionDescriptor.ActionName.ToLower();
         var permission = $"api:{controller}:{action}";
 
-        if (!context.User.IsInRole(permission))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            // Optionally write response body
-            // await context.Response.WriteAsync("Forbidden");
-            return;
-        }
+        //if (!context.User.IsInRole(permission))
+        //{
+        //    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        //    return;
+        //}
 
         await _next(context);
     }

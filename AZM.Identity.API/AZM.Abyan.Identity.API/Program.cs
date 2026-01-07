@@ -97,6 +97,7 @@ builder.Services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =
 {
     var config = sp.GetRequiredService<IOptions<KeycloakConfiguration>>().Value;
     client.BaseAddress = new Uri(config.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(5);
 });
 
 // Application Services

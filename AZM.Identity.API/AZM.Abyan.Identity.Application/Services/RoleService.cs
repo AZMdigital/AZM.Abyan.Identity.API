@@ -17,6 +17,18 @@ public class RoleService : IRoleService
         return await _keycloakService.GetClientRolesAsync(clientId, adminToken, cancellationToken);
     }
 
+    public async Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default)
+    {
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        await _keycloakService.CreateClientRoleAsync(clientId, request, adminToken, cancellationToken);
+    }
+
+    public async Task DeleteClientRoleAsync(string clientId, string roleName, CancellationToken cancellationToken = default)
+    {
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        await _keycloakService.DeleteClientRoleAsync(clientId, roleName, adminToken, cancellationToken);
+    }
+
     public async Task AssignClientRoleToUserAsync(AssignRoleRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);

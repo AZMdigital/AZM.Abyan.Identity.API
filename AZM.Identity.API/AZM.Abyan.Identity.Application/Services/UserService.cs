@@ -1,3 +1,4 @@
+using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 
 namespace AZM.Abyan.Identity.Application.Services;
@@ -57,6 +58,52 @@ public class UserService : IUserService
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
         await _keycloakService.SendVerifyEmailAsync(userId, adminToken, cancellationToken);
+    }
+
+    public async Task<UserResponse?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    {
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        return await _keycloakService.GetUserByUsernameAsync(username, adminToken, cancellationToken);
+    }
+
+    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        
+        // Get user info
+        var user = await _keycloakService.GetUserByIdAsync(userId, adminToken, cancellationToken);
+        if (user == null)
+            return null;
+
+        // Get realm roles
+        var realmRoles = await _keycloakService.GetUserRealmRolesAsync(userId, adminToken, cancellationToken);
+
+        // Get all clients and their roles for the user
+        var clients = await _keycloakService.GetClientsAsync(adminToken, cancellationToken);
+        var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
+
+        foreach (var client in clients)
+        {
+            var roles = await _keycloakService.GetUserClientRolesAsync(userId, client.Id, adminToken, cancellationToken);
+            if (roles.Any())
+            {
+                clientRoles[client.ClientId] = roles;
+            }
+        }
+
+        return new UserInfoResponse
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Enabled = user.Enabled,
+            EmailVerified = user.EmailVerified,
+            CreatedTimestamp = user.CreatedTimestamp,
+            RealmRoles = realmRoles,
+            ClientRoles = clientRoles
+        };
     }
 }
 

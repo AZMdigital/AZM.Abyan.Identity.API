@@ -11,25 +11,41 @@ using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config) : IKeycloakService
+public class KeycloakService : IKeycloakService
 {
-    private readonly HttpClient _httpClient = httpClient;
-    private readonly KeycloakConfiguration _config = config.Value;
+    private readonly HttpClient _httpClient;
+    private readonly KeycloakConfiguration _config;
+    private readonly IConfiguration _configuration;
+
+    public KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config, IConfiguration configuration)
+    {
+        _httpClient = httpClient;
+        _config = config.Value;
+        _configuration = configuration;
+    }
 
     public async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_config.Realm}/protocol/openid-connect/token")
+        // Use KeycloakAdmin configuration for admin token
+        var adminConfig = _configuration.GetSection("KeycloakAdmin").Get<KeycloakConfiguration>();
+        if (adminConfig == null)
+        {
+            throw new InvalidOperationException("KeycloakAdmin configuration not found");
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{adminConfig.Realm}/protocol/openid-connect/token")
         {
             Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 { "grant_type", "password" },
-                { "client_id", _config.ClientId },
-                { "username", _config.AdminUsername },
-                { "password", _config.AdminPassword }
+                { "client_id", adminConfig.ClientId },
+                { "username", adminConfig.AdminUsername },
+                { "password", adminConfig.AdminPassword }
             })
         };
 
@@ -65,7 +81,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
         var requestBody = new List<KeyValuePair<string, string>>
         {
             new("grant_type", "password"),
-            new("client_id", _config.ClientIdLocal),
+            new("client_id", _config.ClientId),
             new("username", username),
             new("password", password)
         };
@@ -673,6 +689,48 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<UserResponse?> GetUserByUsernameAsync(string username, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{_config.Realm}/users?username={Uri.EscapeDataString(username)}&exact=true";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var users = await response.Content.ReadFromJsonAsync<List<UserResponse>>(cancellationToken: cancellationToken);
+        return users?.FirstOrDefault();
+    }
+
+    public async Task<List<RealmRoleResponse>> GetUserRealmRolesAsync(string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings/realm";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var roles = await response.Content.ReadFromJsonAsync<List<RealmRoleResponse>>(cancellationToken: cancellationToken);
+        return roles ?? new List<RealmRoleResponse>();
+    }
+
+    public async Task<List<ClientRoleResponse>> GetUserClientRolesAsync(string userId, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings/clients/{clientId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var roles = await response.Content.ReadFromJsonAsync<List<ClientRoleResponse>>(cancellationToken: cancellationToken);
+        return roles ?? new List<ClientRoleResponse>();
     }
 
     public async Task DeleteUserAsync(string userId, string adminToken, CancellationToken cancellationToken = default)

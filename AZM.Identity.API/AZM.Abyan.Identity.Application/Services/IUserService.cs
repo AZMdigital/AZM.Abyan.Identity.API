@@ -12,5 +12,7 @@ public interface IUserService
     Task EnableUserAsync(string userId, bool enabled, CancellationToken cancellationToken = default);
     Task ResetUserPasswordAsync(string userId, ResetPasswordRequest request, CancellationToken cancellationToken = default);
     Task SendVerifyEmailAsync(string userId, CancellationToken cancellationToken = default);
+    Task<UserResponse?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default);
+    Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default);
 }
 

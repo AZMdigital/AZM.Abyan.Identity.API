@@ -128,7 +128,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<AZM.Abyan.Identity.API.Middleware.PermissionMiddleware>();
+//app.UseMiddleware<AZM.Abyan.Identity.API.Middleware.PermissionMiddleware>();
 
 app.MapControllers();
 

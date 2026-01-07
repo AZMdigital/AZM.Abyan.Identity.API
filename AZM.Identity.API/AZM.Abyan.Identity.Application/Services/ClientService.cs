@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 
@@ -18,7 +19,7 @@ public class ClientService : IClientService
         return await _keycloakService.GetClientsAsync(adminToken, cancellationToken);
     }
 
-    public async Task<ClientResponse?> GetClientByIdAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<JsonElement?> GetClientByIdAsync(string clientId, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
         return await _keycloakService.GetClientByIdAsync(clientId, adminToken, cancellationToken);

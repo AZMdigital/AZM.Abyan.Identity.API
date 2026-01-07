@@ -12,6 +12,6 @@ namespace AZM.Abyan.Identity.Domain.Entities
         public string Name {  get; set; }
         public Guid? KeycloakClientId { get; set; }
         public Guid RealmId { get; set; }
-        public Realm Realm { get; set; } = null!;
+        public Tenant tenant { get; set; } = null!;
     }
 }

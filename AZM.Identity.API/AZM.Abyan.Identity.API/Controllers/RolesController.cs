@@ -81,8 +81,8 @@ public class RolesController : ControllerBase
         }
     }
 
-    [HttpPost("remove")]
-    public async Task<ActionResult> RemoveClientRoleFromUser([FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+    [HttpPost("unassign")]
+    public async Task<ActionResult> UnassignClientRoleFromUser([FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {

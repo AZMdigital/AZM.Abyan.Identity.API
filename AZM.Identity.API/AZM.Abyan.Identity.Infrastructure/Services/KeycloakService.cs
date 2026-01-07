@@ -60,7 +60,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
     public async Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        var tokenEndpoint = $"/realms/{_config.RealmLocal}/protocol/openid-connect/token";
+        var tokenEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/token"; // TO DO: Add Admin Realm and Client if client needed here
 
         var requestBody = new List<KeyValuePair<string, string>>
         {
@@ -243,7 +243,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
     public async Task<List<ClientRoleResponse>> GetClientRolesAsync(string clientId, string adminToken, CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{_config.RealmLocal}/clients/{clientId}/roles";
+        var endpoint = $"/admin/realms/{_config.Realm}/clients/{clientId}/roles"; // TO DO: Add Admin Realm and Client if client needed here
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -257,7 +257,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
     public async Task AssignClientRoleToUserAsync(string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default)
     {
-        var roleEndpoint = $"/admin/realms/{_config.RealmLocal}/clients/{clientId}/roles/{roleName}";
+        var roleEndpoint = $"/admin/realms/{_config.Realm}/clients/{clientId}/roles/{roleName}"; // TO DO: Add Admin Realm and Client if client needed here
 
         var roleRequest = new HttpRequestMessage(HttpMethod.Get, roleEndpoint);
         roleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -269,7 +269,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
         if (role == null)
             throw new KeyNotFoundException($"Role {roleName} not found in client {clientId}");
 
-        var assignEndpoint = $"/admin/realms/{_config.RealmLocal}/users/{userId}/role-mappings/clients/{clientId}";
+        var assignEndpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings/clients/{clientId}"; // TO DO: Add Admin Realm and Client if client needed here
 
         var rolesPayload = new[]
         {
@@ -299,7 +299,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
     public async Task RemoveClientRoleFromUserAsync(string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default)
     {
-        var roleEndpoint = $"/admin/realms/{_config.RealmLocal}/clients/{clientId}/roles/{roleName}";
+        var roleEndpoint = $"/admin/realms/{_config.Realm}/clients/{clientId}/roles/{roleName}"; // TO DO: Add Admin Realm and Client if client needed here
 
         var roleRequest = new HttpRequestMessage(HttpMethod.Get, roleEndpoint);
         roleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -311,7 +311,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
         if (role == null)
             throw new KeyNotFoundException($"Role {roleName} not found in client {clientId}");
 
-        var removeEndpoint = $"/admin/realms/{_config.RealmLocal}/users/{userId}/role-mappings/clients/{clientId}";
+        var removeEndpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings/clients/{clientId}";
 
         var rolesPayload = new[]
         {
@@ -389,7 +389,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
 
     public async Task<JsonElement?> GetClientByIdAsync(string clientId, string adminToken, CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{_config.RealmLocal}/clients/?clientId={clientId}";
+        var endpoint = $"/admin/realms/{_config.Realm}/clients/?clientId={clientId}"; // TO DO: Add Admin Realm and Client if client needed here
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);

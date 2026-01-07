@@ -29,8 +29,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
                 { "grant_type", "password" },
                 { "client_id", _config.ClientId },
                 { "username", _config.AdminUsername },
-                { "password", _config.AdminPassword },
-                {"client_secret",_config.ClientSecret }
+                { "password", _config.AdminPassword }
             })
         };
 
@@ -68,8 +67,7 @@ public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfigurati
             new("grant_type", "password"),
             new("client_id", _config.ClientIdLocal),
             new("username", username),
-            new("password", password),
-            new("client_secret",_config.ClientSecret)
+            new("password", password)
         };
 
         if (!string.IsNullOrEmpty(_config.ClientSecret))

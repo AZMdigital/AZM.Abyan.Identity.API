@@ -6,12 +6,12 @@ namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IClientService
 {
-    Task<List<ClientResponse>> GetClientsAsync(CancellationToken cancellationToken = default);
-    Task<JsonElement?> GetClientByIdAsync(string clientId, CancellationToken cancellationToken = default);
-    Task<Guid> CreateClientAsync(CreateClientRequest request, CancellationToken cancellationToken = default);
-    Task UpdateClientAsync(string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default);
-    Task DeleteClientAsync(string clientId, CancellationToken cancellationToken = default);
-    Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default);
-    Task DeleteClientRoleAsync(string clientId, string roleName, CancellationToken cancellationToken = default);
+    Task<List<ClientResponse>> GetClientsAsync(string realm, CancellationToken cancellationToken = default);
+    Task<JsonElement?> GetClientByIdAsync(string realm, string clientId, CancellationToken cancellationToken = default);
+    Task CreateClientAsync(string realm, CreateClientRequest request, CancellationToken cancellationToken = default);
+    Task UpdateClientAsync(string realm, string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default);
+    Task DeleteClientAsync(string realm, string clientId, CancellationToken cancellationToken = default);
+    Task CreateClientRoleAsync(string realm, string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default);
+    Task DeleteClientRoleAsync(string realm, string clientId, string roleName, CancellationToken cancellationToken = default);
 }
 

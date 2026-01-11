@@ -86,16 +86,17 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Authentication (Keycloak)
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        var keycloakSettings = builder.Configuration
-            .GetSection("Keycloak")
-            .Get<KeycloakConfiguration>();
-
-        var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
-        var realm = keycloakSettings?.Realm ?? "Abyan";
+// Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
+    var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
+    var realm = keycloakSettings?.Realm ?? "Abyan";
 
         options.Authority = $"{keycloakUrl}/realms/{realm}";
         options.RequireHttpsMetadata = false;
@@ -113,11 +114,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Options
+// Keycloak configuration - using KeycloakFormbuilder as default application config
 builder.Services.Configure<KeycloakConfiguration>(
-    builder.Configuration.GetSection("Keycloak"));
-
-// Infrastructure
+    builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache(options =>

@@ -37,7 +37,7 @@ public class UserService : IUserService
     public async Task<List<UserResponse>> GetUsersAsync(CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        return await _keycloakService.GetUsersAsync(adminToken, cancellationToken);
+        return await _keycloakService.GetUsersAsync(_keycloakConfig.Realm, adminToken, cancellationToken);
     }
 
     public async Task<UserResponse?> GetUserByIdAsync(string userId, CancellationToken cancellationToken = default)

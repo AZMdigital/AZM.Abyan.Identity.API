@@ -79,6 +79,62 @@ public class KeycloakService : IKeycloakService
         return resources?.FirstOrDefault();
     }
 
+    public async Task<List<ResourceDto>> GetAllResourcesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/resource";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var resources = await response.Content.ReadFromJsonAsync<List<ResourceDto>>(cancellationToken: cancellationToken);
+        return resources ?? new List<ResourceDto>();
+    }
+
+    public async Task<List<ScopeDto>> GetAllScopesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/scope";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var scopes = await response.Content.ReadFromJsonAsync<List<ScopeDto>>(cancellationToken: cancellationToken);
+        return scopes ?? new List<ScopeDto>();
+    }
+
+    public async Task<List<PolicyDto>> GetAllPoliciesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var policies = await response.Content.ReadFromJsonAsync<List<PolicyDto>>(cancellationToken: cancellationToken);
+        return policies ?? new List<PolicyDto>();
+    }
+
+    public async Task<List<PermissionDto>> GetAllPermissionsAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/permission";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var permissions = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(cancellationToken: cancellationToken);
+        return permissions ?? new List<PermissionDto>();
+    }
+
     #endregion
 
     public async Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
@@ -207,9 +263,9 @@ public class KeycloakService : IKeycloakService
         return string.Empty;
     }
 
-    public async Task<List<UserResponse>> GetUsersAsync(string adminToken, CancellationToken cancellationToken = default)
+    public async Task<List<UserResponse>> GetUsersAsync(string realm, string adminToken, CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{_config.Realm}/users";
+        var endpoint = $"/admin/realms/{realm}/users";
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);

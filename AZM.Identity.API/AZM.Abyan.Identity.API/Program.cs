@@ -3,10 +3,13 @@ using System.Reflection;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces;
+using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using AZM.Abyan.Identity.Infrastructure.Services;
 using AZM.Abyan.Identity.Persistence.DbContexts;
 using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
+using AZM.Abyan.Identity.Persistence.Repositories.GenericRepository;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -143,6 +146,29 @@ builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+
+// Generic Repositories
+builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
+
+// Sync Services
+builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();
+builder.Services.AddScoped<IUserSyncService, UserSyncService>();
+builder.Services.AddScoped<IClientSyncService, ClientSyncService>();
+builder.Services.AddScoped<IRoleSyncService, RoleSyncService>();
+builder.Services.AddScoped<IScopeSyncService, ScopeSyncService>();
+builder.Services.AddScoped<IResourceSyncService, ResourceSyncService>();
+builder.Services.AddScoped<IPolicySyncService, PolicySyncService>();
+builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
+builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
+builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
 
 #endregion
 

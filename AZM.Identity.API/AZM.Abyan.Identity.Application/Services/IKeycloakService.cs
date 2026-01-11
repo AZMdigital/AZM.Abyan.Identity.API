@@ -20,7 +20,7 @@ public interface IKeycloakService
     Task<string> CreateUserAsync(CreateUserRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task UpdateUserAsync(string userId, UpdateUserRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DeleteUserAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
-    Task<List<UserResponse>> GetUsersAsync(string adminToken, CancellationToken cancellationToken = default);
+    Task<List<UserResponse>> GetUsersAsync(string realm, string adminToken, CancellationToken cancellationToken = default);
     Task<UserResponse?> GetUserByIdAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task EnableUserAsync(string userId, bool enabled, string adminToken, CancellationToken cancellationToken = default);
     Task ResetUserPasswordAsync(string userId, ResetPasswordRequest request, string adminToken, CancellationToken cancellationToken = default);
@@ -74,13 +74,18 @@ public interface IKeycloakService
 
     // Authorization Services (UMA)
     Task<ResourceDto?> GetResourceAsync(string realm, string clientId, string resourceName, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<ResourceDto>> GetAllResourcesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task<Guid> CreateResourceAsync(string realm, string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
     Task UpdateResourceAsync(string realm, string clientId, ResourceDto resource, string adminToken, CancellationToken cancellationToken = default);
 
+    Task<List<ScopeDto>> GetAllScopesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
+
     Task<PolicyDto?> GetPolicyAsync(string realm, string clientId, string policyName, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<PolicyDto>> GetAllPoliciesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task<string> CreateRolePolicyAsync(string realm, string clientId, string policyName, IEnumerable<string> roleNames, string adminToken, CancellationToken cancellationToken = default);
     
     Task<PermissionDto?> GetPermissionAsync(string realm, string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<PermissionDto>> GetAllPermissionsAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task<string> CreateScopePermissionAsync(string realm, string clientId, string permissionName, IEnumerable<string> resources, IEnumerable<string> scopes, IEnumerable<string> policies, string adminToken, CancellationToken cancellationToken = default);
 }
 

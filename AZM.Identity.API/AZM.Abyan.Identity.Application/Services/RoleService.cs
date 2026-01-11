@@ -11,34 +11,34 @@ public class RoleService : IRoleService
         _keycloakService = keycloakService;
     }
 
-    public async Task<List<ClientRoleResponse>> GetClientRolesAsync(string clientId, CancellationToken cancellationToken = default)
+    public async Task<List<ClientRoleResponse>> GetClientRolesAsync(string realm, string clientId, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        return await _keycloakService.GetClientRolesAsync(clientId, adminToken, cancellationToken);
+        return await _keycloakService.GetClientRolesAsync(realm, clientId, adminToken, cancellationToken);
     }
 
-    public async Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default)
+    public async Task CreateClientRoleAsync(string realm, string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        await _keycloakService.CreateClientRoleAsync(clientId, request, adminToken, cancellationToken);
+        await _keycloakService.CreateClientRoleAsync(realm, clientId, request, adminToken, cancellationToken);
     }
 
-    public async Task DeleteClientRoleAsync(string clientId, string roleName, CancellationToken cancellationToken = default)
+    public async Task DeleteClientRoleAsync(string realm, string clientId, string roleName, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        await _keycloakService.DeleteClientRoleAsync(clientId, roleName, adminToken, cancellationToken);
+        await _keycloakService.DeleteClientRoleAsync(realm, clientId, roleName, adminToken, cancellationToken);
     }
 
-    public async Task AssignClientRoleToUserAsync(AssignRoleRequest request, CancellationToken cancellationToken = default)
+    public async Task AssignClientRoleToUserAsync(string realm, AssignRoleRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        await _keycloakService.AssignClientRoleToUserAsync(request.UserId, request.ClientId, request.RoleName, adminToken, cancellationToken);
+        await _keycloakService.AssignClientRoleToUserAsync(realm, request.UserId, request.ClientId, request.RoleName, adminToken, cancellationToken);
     }
 
-    public async Task RemoveClientRoleFromUserAsync(AssignRoleRequest request, CancellationToken cancellationToken = default)
+    public async Task RemoveClientRoleFromUserAsync(string realm, AssignRoleRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        await _keycloakService.RemoveClientRoleFromUserAsync(request.UserId, request.ClientId, request.RoleName, adminToken, cancellationToken);
+        await _keycloakService.RemoveClientRoleFromUserAsync(realm, request.UserId, request.ClientId, request.RoleName, adminToken, cancellationToken);
     }
 }
 

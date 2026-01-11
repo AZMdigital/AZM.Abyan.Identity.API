@@ -1,7 +1,11 @@
+using AZM.Abyan.Identity.Application.Commands.Client.Create;
+using AZM.Abyan.Identity.Application.Commands.Client.Delete;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Services;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -10,10 +14,11 @@ namespace AZM.Abyan.Identity.API.Controllers;
 public class ClientsController : ControllerBase
 {
     private readonly IClientService _clientService;
-
-    public ClientsController(IClientService clientService)
+    private IMediator? _mediator;
+    public ClientsController(IClientService clientService, IMediator Mediator)
     {
         _clientService = clientService;
+        _mediator = Mediator;
     }
 
     [HttpGet]
@@ -51,8 +56,15 @@ public class ClientsController : ControllerBase
     {
         try
         {
-            await _clientService.CreateClientAsync(realm, request, cancellationToken);
-            return Ok(new { message = $"Client '{request.ClientId}' created successfully in realm '{realm}'" });
+           
+            var result= await _clientService.CreateClientAsync(realm, request, cancellationToken);
+            CreateClientCommand command = new CreateClientCommand();
+            command.Name = request.Name;
+            command.Description = request.Description;
+            command.RealmId = request.RealmId;
+            command.KeycloakClientId = result;
+            var resultDB = await _mediator.Send(command);
+            return StatusCode(resultDB.StatusCode, resultDB);
         }
         catch (Exception ex)
         {
@@ -80,7 +92,9 @@ public class ClientsController : ControllerBase
         try
         {
             await _clientService.DeleteClientAsync(realm, id, cancellationToken);
-            return Ok(new { message = $"Client '{id}' deleted successfully from realm '{realm}'" });
+            var resultDB = await _mediator.Send(new DeleteClientCommand(Guid.Parse(id)));
+            return StatusCode(resultDB.StatusCode, resultDB);
+            
         }
         catch (Exception ex)
         {

@@ -1,15 +1,19 @@
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.Models;
+using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
 public class UserService : IUserService
 {
     private readonly IKeycloakService _keycloakService;
+    private readonly KeycloakConfiguration _keycloakConfig;
 
-    public UserService(IKeycloakService keycloakService)
+    public UserService(IKeycloakService keycloakService, IOptions<KeycloakConfiguration> keycloakConfig)
     {
         _keycloakService = keycloakService;
+        _keycloakConfig = keycloakConfig.Value;
     }
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
@@ -79,7 +83,8 @@ public class UserService : IUserService
         var realmRoles = await _keycloakService.GetUserRealmRolesAsync(userId, adminToken, cancellationToken);
 
         // Get all clients and their roles for the user
-        var clients = await _keycloakService.GetClientsAsync(adminToken, cancellationToken);
+        var realm = _keycloakConfig.Realm;
+        var clients = await _keycloakService.GetClientsAsync(realm, adminToken, cancellationToken);
         var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
 
         foreach (var client in clients)

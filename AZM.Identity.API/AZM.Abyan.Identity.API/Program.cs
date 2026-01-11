@@ -67,7 +67,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
+    var keycloakSettings = builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder").Get<KeycloakConfiguration>();
     var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
     var realm = keycloakSettings?.Realm ?? "Abyan";
 
@@ -87,9 +87,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Keycloak configuration
+// Keycloak configuration - using KeycloakFormbuilder as default application config
 builder.Services.Configure<KeycloakConfiguration>(
-    builder.Configuration.GetSection("Keycloak"));
+    builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
 builder.Services.AddHttpContextAccessor();
 
 // HttpClient for Keycloak

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/realms/{realm}/[controller]")]
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;
@@ -18,11 +18,11 @@ public class RolesController : ControllerBase
 
     [HttpGet("clients/{clientId}")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<ClientRoleResponse>>> GetClientRoles(string clientId, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<ClientRoleResponse>>> GetClientRoles(string realm, string clientId, CancellationToken cancellationToken)
     {
         try
         {
-            var roles = await _roleService.GetClientRolesAsync(clientId, cancellationToken);
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
             return Ok(roles);
         }
         catch (Exception ex)
@@ -32,12 +32,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("clients/{clientId}")]
-    public async Task<ActionResult> CreateClientRole(string clientId, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> CreateClientRole(string realm, string clientId, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            await _roleService.CreateClientRoleAsync(clientId, request, cancellationToken);
-            return Ok(new { message = $"Role '{request.Name}' created successfully for client '{clientId}'" });
+            await _roleService.CreateClientRoleAsync(realm, clientId, request, cancellationToken);
+            return Ok(new { message = $"Role '{request.Name}' created successfully for client '{clientId}' in realm '{realm}'" });
         }
         catch (Exception ex)
         {
@@ -46,12 +46,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpDelete("clients/{clientId}/{roleName}")]
-    public async Task<ActionResult> DeleteClientRole(string clientId, string roleName, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeleteClientRole(string realm, string clientId, string roleName, CancellationToken cancellationToken)
     {
         try
         {
-            await _roleService.DeleteClientRoleAsync(clientId, roleName, cancellationToken);
-            return Ok(new { message = $"Role '{roleName}' deleted successfully from client '{clientId}'" });
+            await _roleService.DeleteClientRoleAsync(realm, clientId, roleName, cancellationToken);
+            return Ok(new { message = $"Role '{roleName}' deleted successfully from client '{clientId}' in realm '{realm}'" });
         }
         catch (KeyNotFoundException ex)
         {
@@ -64,12 +64,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("assign")]
-    public async Task<ActionResult> AssignClientRoleToUser([FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> AssignClientRoleToUser(string realm, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            await _roleService.AssignClientRoleToUserAsync(request, cancellationToken);
-            return Ok(new { message = $"Role {request.RoleName} assigned to user {request.UserId} successfully" });
+            await _roleService.AssignClientRoleToUserAsync(realm, request, cancellationToken);
+            return Ok(new { message = $"Role {request.RoleName} assigned to user {request.UserId} successfully in realm '{realm}'" });
         }
         catch (KeyNotFoundException ex)
         {
@@ -82,12 +82,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("unassign")]
-    public async Task<ActionResult> UnassignClientRoleFromUser([FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UnassignClientRoleFromUser(string realm, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            await _roleService.RemoveClientRoleFromUserAsync(request, cancellationToken);
-            return Ok(new { message = $"Role {request.RoleName} removed from user {request.UserId} successfully" });
+            await _roleService.RemoveClientRoleFromUserAsync(realm, request, cancellationToken);
+            return Ok(new { message = $"Role {request.RoleName} removed from user {request.UserId} successfully in realm '{realm}'" });
         }
         catch (KeyNotFoundException ex)
         {

@@ -4,10 +4,10 @@ namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IRoleService
 {
-    Task<List<ClientRoleResponse>> GetClientRolesAsync(string clientId, CancellationToken cancellationToken = default);
-    Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default);
-    Task DeleteClientRoleAsync(string clientId, string roleName, CancellationToken cancellationToken = default);
-    Task AssignClientRoleToUserAsync(AssignRoleRequest request, CancellationToken cancellationToken = default);
-    Task RemoveClientRoleFromUserAsync(AssignRoleRequest request, CancellationToken cancellationToken = default);
+    Task<List<ClientRoleResponse>> GetClientRolesAsync(string realm, string clientId, CancellationToken cancellationToken = default);
+    Task CreateClientRoleAsync(string realm, string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default);
+    Task DeleteClientRoleAsync(string realm, string clientId, string roleName, CancellationToken cancellationToken = default);
+    Task AssignClientRoleToUserAsync(string realm, AssignRoleRequest request, CancellationToken cancellationToken = default);
+    Task RemoveClientRoleFromUserAsync(string realm, AssignRoleRequest request, CancellationToken cancellationToken = default);
 }
 

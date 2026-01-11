@@ -1,6 +1,8 @@
 using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
+using MediatR;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -25,10 +27,12 @@ public class ClientService : IClientService
         return await _keycloakService.GetClientByIdAsync(clientId, adminToken, cancellationToken);
     }
 
-    public async Task CreateClientAsync(CreateClientRequest request, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateClientAsync(CreateClientRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        await _keycloakService.CreateClientAsync(request, adminToken, cancellationToken);
+        var result= await _keycloakService.CreateClientAsync(request, adminToken, cancellationToken);
+
+        return result;
     }
 
     public async Task UpdateClientAsync(string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default)

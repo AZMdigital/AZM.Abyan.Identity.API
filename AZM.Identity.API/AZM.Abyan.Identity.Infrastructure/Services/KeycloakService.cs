@@ -13,6 +13,7 @@ using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using static System.Net.WebRequestMethods;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
@@ -420,23 +421,23 @@ public class KeycloakService : IKeycloakService
         return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
     }
 
-    public async Task CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{_config.Realm}/clients";
 
         var client = new
         {
-            clientId = request.ClientId,
+            clientId = request.Name,
             name = request.Name,
             description = request.Description,
-            enabled = request.Enabled,
-            protocol = request.Protocol,
-            publicClient = request.PublicClient,
-            bearerOnly = request.BearerOnly,
-            serviceAccountsEnabled = request.ServiceAccountsEnabled,
-            authorizationServicesEnabled = request.AuthorizationServicesEnabled,
-            redirectUris = request.RedirectUris,
-            webOrigins = request.WebOrigins
+            enabled = true,
+            protocol = "openid-connect",
+            publicClient = false,
+            bearerOnly = false,
+            serviceAccountsEnabled = true,
+            authorizationServicesEnabled = true,
+            redirectUris = Array.Empty<string>(),
+            webOrigins = Array.Empty<string>()
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(client);
@@ -449,7 +450,24 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Keycloak Error ({(int)response.StatusCode}): {responseBody}");
+        }
         response.EnsureSuccessStatusCode();
+
+        var getRequest = new HttpRequestMessage(HttpMethod.Get,$"/admin/realms/{_config.Realm}/clients?clientId={client.clientId}");
+
+        getRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var getResponse = await _httpClient.SendAsync(getRequest, cancellationToken);
+        getResponse.EnsureSuccessStatusCode();
+
+        var clients = await getResponse.Content.ReadFromJsonAsync<List<KeycloakClient>>(cancellationToken: cancellationToken);
+
+        return Guid.Parse(clients!.First().Id);
     }
 
     public async Task UpdateClientAsync(string clientId, UpdateClientRequest request, string adminToken, CancellationToken cancellationToken = default)

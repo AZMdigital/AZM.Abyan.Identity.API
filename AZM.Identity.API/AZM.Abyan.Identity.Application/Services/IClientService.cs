@@ -8,7 +8,7 @@ public interface IClientService
 {
     Task<List<ClientResponse>> GetClientsAsync(CancellationToken cancellationToken = default);
     Task<JsonElement?> GetClientByIdAsync(string clientId, CancellationToken cancellationToken = default);
-    Task CreateClientAsync(CreateClientRequest request, CancellationToken cancellationToken = default);
+    Task<Guid> CreateClientAsync(CreateClientRequest request, CancellationToken cancellationToken = default);
     Task UpdateClientAsync(string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default);
     Task DeleteClientAsync(string clientId, CancellationToken cancellationToken = default);
     Task CreateClientRoleAsync(string clientId, CreateClientRoleRequest request, CancellationToken cancellationToken = default);

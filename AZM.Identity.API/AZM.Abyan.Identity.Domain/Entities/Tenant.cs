@@ -9,4 +9,5 @@ public class Tenant : BaseEntity
     public Guid? KeycloakRealmId { get; set; }
     public ICollection<User> Users { get; set; } = [];
     public ICollection<TenantUserRole> TenantUserRoles { get; set; } = [];
+    public ICollection<Client> Clients { get; set; } = [];
 }

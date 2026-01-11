@@ -39,7 +39,7 @@ public interface IKeycloakService
     // Clients
     Task<List<ClientResponse>> GetClientsAsync(string adminToken, CancellationToken cancellationToken = default);
     Task<JsonElement?> GetClientByIdAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
-    Task CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task<Guid> CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task UpdateClientAsync(string clientId, UpdateClientRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DeleteClientAsync(string clientId, string adminToken, CancellationToken cancellationToken = default);
 

@@ -57,7 +57,7 @@ public class ClientsController : ControllerBase
         try
         {
            
-            var result= await _clientService.CreateClientAsync(request, cancellationToken);
+            var result= await _clientService.CreateClientAsync(realm, request, cancellationToken);
             CreateClientCommand command = new CreateClientCommand();
             command.Name = request.Name;
             command.Description = request.Description;
@@ -65,9 +65,6 @@ public class ClientsController : ControllerBase
             command.KeycloakClientId = result;
             var resultDB = await _mediator.Send(command);
             return StatusCode(resultDB.StatusCode, resultDB);
-            //return Ok(new { message = $"Client '{request.Name}' created successfully" });
-            await _clientService.CreateClientAsync(realm, request, cancellationToken);
-            return Ok(new { message = $"Client '{request.ClientId}' created successfully in realm '{realm}'" });
         }
         catch (Exception ex)
         {
@@ -94,12 +91,10 @@ public class ClientsController : ControllerBase
     {
         try
         {
-            await _clientService.DeleteClientAsync(id, cancellationToken);
+            await _clientService.DeleteClientAsync(realm, id, cancellationToken);
             var resultDB = await _mediator.Send(new DeleteClientCommand(Guid.Parse(id)));
             return StatusCode(resultDB.StatusCode, resultDB);
-            //return Ok(new { message = $"Client '{id}' deleted successfully" });
-            await _clientService.DeleteClientAsync(realm, id, cancellationToken);
-            return Ok(new { message = $"Client '{id}' deleted successfully from realm '{realm}'" });
+            
         }
         catch (Exception ex)
         {

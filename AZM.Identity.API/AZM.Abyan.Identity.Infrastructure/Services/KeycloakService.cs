@@ -427,8 +427,7 @@ public class KeycloakService : IKeycloakService
         return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
     }
 
-    public async Task<Guid> CreateClientAsync(CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
-    public async Task CreateClientAsync(string realm, CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateClientAsync(string realm, CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients";
 

@@ -27,13 +27,11 @@ public class ClientService : IClientService
         return await _keycloakService.GetClientByIdAsync(realm, clientId, adminToken, cancellationToken);
     }
 
-    public async Task CreateClientAsync(string realm, CreateClientRequest request, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateClientAsync(string realm, CreateClientRequest request, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        var result= await _keycloakService.CreateClientAsync(request, adminToken, cancellationToken);
-
+        var result = await _keycloakService.CreateClientAsync(realm, request, adminToken, cancellationToken);
         return result;
-        await _keycloakService.CreateClientAsync(realm, request, adminToken, cancellationToken);
     }
 
     public async Task UpdateClientAsync(string realm, string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default)

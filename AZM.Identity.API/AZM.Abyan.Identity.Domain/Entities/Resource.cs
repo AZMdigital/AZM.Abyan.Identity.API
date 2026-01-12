@@ -12,7 +12,6 @@ namespace AZM.Abyan.Identity.Domain.Entities
         public string Name { get; set; } = null!;
         // users, orders, invoices
         public string Description { get; set; } = null!;
-        public Guid? KeycloakResourceId { get; set; } = null!;
         public Guid ScopeId { get; set; }
         public Scope Scope { get; set; } = null!;
     }

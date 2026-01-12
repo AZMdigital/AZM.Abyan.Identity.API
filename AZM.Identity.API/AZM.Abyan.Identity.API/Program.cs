@@ -146,6 +146,7 @@ builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IRealmResolverService, RealmResolverService>();
 
 // Generic Repositories
 builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();

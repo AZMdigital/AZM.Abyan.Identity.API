@@ -1,5 +1,7 @@
+using AZM.Abyan.Identity.Application.Commands.User.Create;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Services;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AZM.Abyan.Identity.API.Controllers;
@@ -9,19 +11,33 @@ namespace AZM.Abyan.Identity.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IMediator _mediator;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, IMediator mediator)
     {
         _userService = userService;
+        _mediator = mediator;
     }
 
     [HttpPost]
-    public async Task<ActionResult<string>> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var userId = await _userService.CreateUserAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetUserById), new { id = userId }, new { userId });
+            // Command handler will create user in Keycloak and save to database
+            CreateUserCommand command = new CreateUserCommand();
+            command.Username = request.Username;
+            command.Email = request.Email;
+            command.FirstName = request.FirstName;
+            command.LastName = request.LastName;
+            command.Password = request.Password;
+            command.Enabled = request.Enabled;
+            command.EmailVerified = request.EmailVerified;
+            // Note: TenantId and Realm should be provided in the request or resolved from context
+            // For now, leaving them optional/nullable as they might come from different sources
+            
+            var result = await _mediator.Send(command);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {

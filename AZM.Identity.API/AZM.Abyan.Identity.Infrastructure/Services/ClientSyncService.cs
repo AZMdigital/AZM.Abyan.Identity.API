@@ -41,17 +41,22 @@ public class ClientSyncService : IClientSyncService
             // Process each Keycloak client
             foreach (var keycloakClient in keycloakClients)
             {
-                var localClient = localClients.FirstOrDefault(c => c.KeycloakClientId?.ToString() == keycloakClient.Id.ToString());
+                if (!Guid.TryParse(keycloakClient.Id.ToString(), out var keycloakClientId))
+                {
+                    result.Errors.Add($"Invalid Keycloak client ID format: {keycloakClient.Id}");
+                    continue;
+                }
+
+                var localClient = localClients.FirstOrDefault(c => c.Id == keycloakClientId);
 
                 if (localClient == null)
                 {
                     // Create new client
                     localClient = new Client
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakClientId,
                         Name = keycloakClient.ClientId, // Use ClientId instead of Name (ClientId is the actual identifier, Name is optional)
                         Description = keycloakClient.Description ?? string.Empty,
-                        KeycloakClientId = Guid.TryParse(keycloakClient.Id.ToString(), out var clientId) ? clientId : null,
                         RealmId = tenantId,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
@@ -64,10 +69,6 @@ public class ClientSyncService : IClientSyncService
                     // Update existing client
                     localClient.Name = keycloakClient.ClientId; // Use ClientId instead of Name (ClientId is the actual identifier, Name is optional)
                     localClient.Description = keycloakClient.Description ?? string.Empty;
-                    if (Guid.TryParse(keycloakClient.Id.ToString(), out var clientId))
-                    {
-                        localClient.KeycloakClientId = clientId;
-                    }
                     localClient.UpdatedAt = DateTime.UtcNow;
                     localClient.UpdatedBy = Guid.Empty;
                     _clientRepository.Update(localClient);
@@ -76,9 +77,12 @@ public class ClientSyncService : IClientSyncService
             }
 
             // Delete clients that don't exist in Keycloak
-            var keycloakClientIds = keycloakClients.Select(c => c.Id).ToHashSet();
+            var keycloakClientIds = keycloakClients
+                .Where(c => Guid.TryParse(c.Id.ToString(), out _))
+                .Select(c => Guid.Parse(c.Id.ToString()))
+                .ToHashSet();
             var clientsToDelete = localClients
-                .Where(c => c.KeycloakClientId.HasValue && !keycloakClientIds.Contains(c.KeycloakClientId.Value))
+                .Where(c => !keycloakClientIds.Contains(c.Id))
                 .ToList();
 
             foreach (var clientToDelete in clientsToDelete)

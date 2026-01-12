@@ -53,7 +53,13 @@ public class ResourceSyncService : IResourceSyncService
             // Process each Keycloak resource
             foreach (var keycloakResource in keycloakResources)
             {
-                var localResource = localResources.FirstOrDefault(r => r.KeycloakResourceId == keycloakResource.Id);
+                if (!keycloakResource.Id.HasValue)
+                {
+                    result.Errors.Add($"Resource '{keycloakResource.Name}' has no ID from Keycloak, skipping");
+                    continue;
+                }
+
+                var localResource = localResources.FirstOrDefault(r => r.Id == keycloakResource.Id.Value);
 
                 // Find or create scope (use first scope from resource or create a default one)
                 var scopeName = keycloakResource.Scopes?.FirstOrDefault()?.Name ?? "view";
@@ -77,10 +83,9 @@ public class ResourceSyncService : IResourceSyncService
                     // Create new resource
                     localResource = new Resource
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakResource.Id.Value,
                         Name = keycloakResource.Name,
                         Description = keycloakResource.DisplayName ?? keycloakResource.Name,
-                        KeycloakResourceId = keycloakResource.Id,
                         ScopeId = scope.Id,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
@@ -93,7 +98,6 @@ public class ResourceSyncService : IResourceSyncService
                     // Update existing resource
                     localResource.Name = keycloakResource.Name;
                     localResource.Description = keycloakResource.DisplayName ?? keycloakResource.Name;
-                    localResource.KeycloakResourceId = keycloakResource.Id;
                     localResource.ScopeId = scope.Id;
                     localResource.UpdatedAt = DateTime.UtcNow;
                     localResource.UpdatedBy = Guid.Empty;
@@ -103,9 +107,12 @@ public class ResourceSyncService : IResourceSyncService
             }
 
             // Delete resources that don't exist in Keycloak
-            var keycloakResourceIds = keycloakResources.Select(r => r.Id).ToHashSet();
+            var keycloakResourceIds = keycloakResources
+                .Where(r => r.Id.HasValue)
+                .Select(r => r.Id!.Value)
+                .ToHashSet();
             var resourcesToDelete = localResources
-                .Where(r => r.KeycloakResourceId.HasValue && !keycloakResourceIds.Contains(r.KeycloakResourceId.Value))
+                .Where(r => !keycloakResourceIds.Contains(r.Id))
                 .ToList();
 
             foreach (var resourceToDelete in resourcesToDelete)

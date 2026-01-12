@@ -6,7 +6,6 @@ public class Permission : BaseEntity
 {
     public required string Name { get; set; }
     public string? Description { get; set; }
-    public Guid? KeycloakPermissionId { get; set; }
 
     // Format: api:{controller}:{action}
     public Guid ScopeId { get; set; }

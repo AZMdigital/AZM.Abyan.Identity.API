@@ -45,13 +45,14 @@ public class ScopeSyncService : IScopeSyncService
             var localScopes = await _scopeRepository.GetWhere().ToListAsync(cancellationToken);
 
             // Process each Keycloak scope
+            // Note: Scopes don't have IDs from Keycloak, so we match by name and generate IDs for new scopes
             foreach (var keycloakScope in keycloakScopes)
             {
                 var localScope = localScopes.FirstOrDefault(s => s.Name == keycloakScope.Name);
 
                 if (localScope == null)
                 {
-                    // Create new scope
+                    // Create new scope (generate ID since Keycloak doesn't provide one)
                     localScope = new Scope
                     {
                         Id = Guid.NewGuid(),

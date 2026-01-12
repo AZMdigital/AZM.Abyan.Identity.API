@@ -41,17 +41,22 @@ public class TenantSyncService : ITenantSyncService
             // Process each Keycloak realm
             foreach (var keycloakRealm in keycloakRealms)
             {
-                var localTenant = localTenants.FirstOrDefault(t => t.KeycloakRealmId?.ToString() == keycloakRealm.Id || t.Name == keycloakRealm.Realm);
+                if (!Guid.TryParse(keycloakRealm.Id, out var keycloakRealmId))
+                {
+                    result.Errors.Add($"Invalid Keycloak realm ID format: {keycloakRealm.Id}");
+                    continue;
+                }
+
+                var localTenant = localTenants.FirstOrDefault(t => t.Id == keycloakRealmId || t.Name == keycloakRealm.Realm);
 
                 if (localTenant == null)
                 {
                     // Create new tenant
                     localTenant = new Tenant
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakRealmId,
                         Name = keycloakRealm.Realm,
                         IsActive = keycloakRealm.Enabled,
-                        KeycloakRealmId = Guid.TryParse(keycloakRealm.Id, out var realmId) ? realmId : null,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
                     };
@@ -60,13 +65,13 @@ public class TenantSyncService : ITenantSyncService
                 }
                 else
                 {
-                    // Update existing tenant
+                    // Update existing tenant - ensure ID matches Keycloak
+                    if (localTenant.Id != keycloakRealmId)
+                    {
+                        localTenant.Id = keycloakRealmId;
+                    }
                     localTenant.Name = keycloakRealm.Realm;
                     localTenant.IsActive = keycloakRealm.Enabled;
-                    if (Guid.TryParse(keycloakRealm.Id, out var realmId))
-                    {
-                        localTenant.KeycloakRealmId = realmId;
-                    }
                     localTenant.UpdatedAt = DateTime.UtcNow;
                     localTenant.UpdatedBy = Guid.Empty;
                     _tenantRepository.Update(localTenant);
@@ -75,9 +80,12 @@ public class TenantSyncService : ITenantSyncService
             }
 
             // Delete tenants that don't exist in Keycloak
-            var keycloakRealmNames = keycloakRealms.Select(r => r.Realm).ToHashSet();
+            var keycloakRealmIds = keycloakRealms
+                .Where(r => Guid.TryParse(r.Id, out _))
+                .Select(r => Guid.Parse(r.Id))
+                .ToHashSet();
             var tenantsToDelete = localTenants
-                .Where(t => !keycloakRealmNames.Contains(t.Name) && t.KeycloakRealmId.HasValue)
+                .Where(t => !keycloakRealmIds.Contains(t.Id))
                 .ToList();
 
             foreach (var tenantToDelete in tenantsToDelete)

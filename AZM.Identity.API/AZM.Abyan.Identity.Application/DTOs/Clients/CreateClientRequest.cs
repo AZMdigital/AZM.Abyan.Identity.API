@@ -5,7 +5,6 @@ public class CreateClientRequest
    // public string ClientId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public Guid RealmId { get; set; }
     //public bool Enabled { get; set; } = true;
     //public string Protocol { get; set; } = "openid-connect";
     //public bool PublicClient { get; set; }

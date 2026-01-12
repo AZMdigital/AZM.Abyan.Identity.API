@@ -47,17 +47,22 @@ public class RoleSyncService : IRoleSyncService
             // Process each Keycloak role
             foreach (var keycloakRole in keycloakRoles)
             {
-                var localRole = localRoles.FirstOrDefault(r => r.KeycloakRoleId?.ToString() == keycloakRole.Id);
+                if (!Guid.TryParse(keycloakRole.Id, out var keycloakRoleId))
+                {
+                    result.Errors.Add($"Invalid Keycloak role ID format: {keycloakRole.Id}");
+                    continue;
+                }
+
+                var localRole = localRoles.FirstOrDefault(r => r.Id == keycloakRoleId);
 
                 if (localRole == null)
                 {
                     // Create new role
                     localRole = new Role
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakRoleId,
                         Name = keycloakRole.Name,
                         Description = keycloakRole.Description ?? string.Empty,
-                        KeycloakRoleId = Guid.TryParse(keycloakRole.Id, out var roleId) ? roleId : null,
                         ClientId = localClientId,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
@@ -70,10 +75,6 @@ public class RoleSyncService : IRoleSyncService
                     // Update existing role
                     localRole.Name = keycloakRole.Name;
                     localRole.Description = keycloakRole.Description ?? string.Empty;
-                    if (Guid.TryParse(keycloakRole.Id, out var roleId))
-                    {
-                        localRole.KeycloakRoleId = roleId;
-                    }
                     localRole.UpdatedAt = DateTime.UtcNow;
                     localRole.UpdatedBy = Guid.Empty;
                     _roleRepository.Update(localRole);
@@ -82,9 +83,12 @@ public class RoleSyncService : IRoleSyncService
             }
 
             // Delete roles that don't exist in Keycloak
-            var keycloakRoleIds = keycloakRoles.Select(r => r.Id).ToHashSet();
+            var keycloakRoleIds = keycloakRoles
+                .Where(r => Guid.TryParse(r.Id, out _))
+                .Select(r => Guid.Parse(r.Id))
+                .ToHashSet();
             var rolesToDelete = localRoles
-                .Where(r => r.KeycloakRoleId.HasValue && !keycloakRoleIds.Contains(r.KeycloakRoleId.Value.ToString()))
+                .Where(r => !keycloakRoleIds.Contains(r.Id))
                 .ToList();
 
             foreach (var roleToDelete in rolesToDelete)

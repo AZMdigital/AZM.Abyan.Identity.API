@@ -18,7 +18,12 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Update
         private readonly IStringLocalizer<SharedResource> _localizer = localizer;
         public async Task<Result<bool>> Handle(UpdateClientCommand request, CancellationToken cancellationToken)
         {
+            // ClientId from request is now the Keycloak ID which is the same as entity Id
             var client = await _repository.GetClientByKeycloakIdAsync(Guid.Parse(request.UpdateClientRequest.ClientId));
+            if (client == null)
+            {
+                return Result<bool>.NotFound(_localizer["ClientNotFound"]);
+            }
             client.Description = request.UpdateClientRequest.Description;
             client.Name = request.UpdateClientRequest.Name;
             var update =  await _repository.UpdateAsync(client, cancellationToken);

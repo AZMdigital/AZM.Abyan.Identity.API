@@ -31,8 +31,8 @@ public class ClientsController : ControllerBase
         {
             var clients = await _clientService.GetClientsAsync(realm, cancellationToken);
             List<ClientResponse> Response = new List<ClientResponse>();
-            if (clients.Count > 0) 
-            {  
+            if (clients.Count > 0)
+            {
                 foreach (var client in clients)
                 {
                     ClientResponse clientResponse = new ClientResponse();
@@ -67,7 +67,7 @@ public class ClientsController : ControllerBase
             var getId = await _mediator.Send(new GetClientByKeycloakIdQuery(client.Id));
             clientResponse.Id = getId.Data;
 
-            if (client == null || clientResponse ==null)
+            if (client == null || clientResponse == null)
                 return NotFound(new { message = $"Client with id {clientName} not found in realm {realm}" });
 
             return Ok(clientResponse);
@@ -82,17 +82,15 @@ public class ClientsController : ControllerBase
     {
         try
         {
-            var result= await _clientService.CreateClientAsync(realm, request, cancellationToken);
-            if (result != Guid.Empty) {
+            // Command handler will create client in Keycloak and save to database
+            // Realm name comes from route parameter, RealmId will be resolved by the handler
             CreateClientCommand command = new CreateClientCommand();
             command.Name = request.Name;
             command.Description = request.Description;
-            command.RealmId = request.RealmId;
-            command.KeycloakClientId = result;
-            var resultDB = await _mediator.Send(command);
-            return StatusCode(resultDB.StatusCode, resultDB);
-            }
-            return BadRequest();
+            command.RealmName = realm; // Use realm name from route parameter
+            
+            var result = await _mediator.Send(command);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -124,7 +122,7 @@ public class ClientsController : ControllerBase
             await _clientService.DeleteClientAsync(realm, id, cancellationToken);
             var resultDB = await _mediator.Send(new DeleteClientCommand(Guid.Parse(id)));
             return StatusCode(resultDB.StatusCode, resultDB);
-            
+
         }
         catch (Exception ex)
         {

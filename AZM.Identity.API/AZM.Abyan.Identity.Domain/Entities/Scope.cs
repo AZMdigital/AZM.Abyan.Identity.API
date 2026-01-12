@@ -12,6 +12,5 @@ namespace AZM.Abyan.Identity.Domain.Entities
         public string Name { get; set; } = null!;
         // view, create, update, delete
         public string Description { get; set; } = null!;
-        public Guid? KeycloakScopeId { get; set; }
     }
 }

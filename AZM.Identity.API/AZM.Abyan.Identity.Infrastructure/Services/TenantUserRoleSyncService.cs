@@ -64,7 +64,12 @@ public class TenantUserRoleSyncService : ITenantUserRoleSyncService
 
             foreach (var keycloakUser in keycloakUsers)
             {
-                var localUser = localUsers.FirstOrDefault(u => u.KeycloakUserId?.ToString() == keycloakUser.Id);
+                if (!Guid.TryParse(keycloakUser.Id, out var keycloakUserId))
+                {
+                    continue;
+                }
+
+                var localUser = localUsers.FirstOrDefault(u => u.Id == keycloakUserId);
                 if (localUser == null) continue;
 
                 // Get user's client roles
@@ -83,10 +88,13 @@ public class TenantUserRoleSyncService : ITenantUserRoleSyncService
                     }
                     foreach (var clientRole in clientRoles)
                     {
-                        var role = allRoles.FirstOrDefault(r => r.KeycloakRoleId?.ToString() == clientRole.Id && r.ClientId.ToString() == client.Id.ToString());
-                        if (role != null)
+                        if (Guid.TryParse(clientRole.Id, out var roleIdGuid))
                         {
-                            keycloakAssignments.Add((localUser.Id, role.Id));
+                            var role = allRoles.FirstOrDefault(r => r.Id == roleIdGuid && r.ClientId == client.Id);
+                            if (role != null)
+                            {
+                                keycloakAssignments.Add((localUser.Id, role.Id));
+                            }
                         }
                     }
                 }

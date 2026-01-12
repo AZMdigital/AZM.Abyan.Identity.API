@@ -11,7 +11,6 @@ namespace AZM.Abyan.Identity.Domain.Entities
     {
         public string Name { get; set; } = null!;
         // AdminPolicy
-        public Guid? KeycloakPolicyId { get; set; }
         public Guid RoleId { get; set; }
         public Role Role { get; set; } = null!;
     }

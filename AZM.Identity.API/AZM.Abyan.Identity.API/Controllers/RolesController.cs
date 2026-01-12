@@ -1,5 +1,7 @@
+using AZM.Abyan.Identity.Application.Commands.Role.Create;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Services;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +12,12 @@ namespace AZM.Abyan.Identity.API.Controllers;
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;
+    private readonly IMediator _mediator;
 
-    public RolesController(IRoleService roleService)
+    public RolesController(IRoleService roleService, IMediator mediator)
     {
         _roleService = roleService;
+        _mediator = mediator;
     }
 
     [HttpGet("clients/{clientId}")]
@@ -36,8 +40,22 @@ public class RolesController : ControllerBase
     {
         try
         {
-            await _roleService.CreateClientRoleAsync(realm, clientId, request, cancellationToken);
-            return Ok(new { message = $"Role '{request.Name}' created successfully for client '{clientId}' in realm '{realm}'" });
+            // Command handler will create role in Keycloak and save to database
+            // clientId parameter is the Keycloak client ID (string), we need to parse it to Guid for local ClientId
+            if (!Guid.TryParse(clientId, out var clientIdGuid))
+            {
+                return BadRequest(new { message = "Invalid client ID format" });
+            }
+
+            CreateRoleCommand command = new CreateRoleCommand();
+            command.Name = request.Name;
+            command.Description = request.Description;
+            command.Realm = realm;
+            command.KeycloakClientId = clientId; // Keycloak client ID (string)
+            command.ClientId = clientIdGuid; // Local client ID (Guid, same as Keycloak ID now)
+            
+            var result = await _mediator.Send(command);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {

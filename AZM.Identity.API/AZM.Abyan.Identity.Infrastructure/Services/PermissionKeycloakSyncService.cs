@@ -61,8 +61,13 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
             // Process each Keycloak permission (only scope permissions)
             foreach (var keycloakPermission in keycloakPermissions.Where(p => p.Type == "scope"))
             {
-                var keycloakPermissionIdGuid = Guid.TryParse(keycloakPermission.Id, out var permId) ? (Guid?)permId : null;
-                var localPermission = localPermissions.FirstOrDefault(p => p.KeycloakPermissionId == keycloakPermissionIdGuid);
+                if (string.IsNullOrEmpty(keycloakPermission.Id) || !Guid.TryParse(keycloakPermission.Id, out var keycloakPermissionId))
+                {
+                    result.Errors.Add($"Permission '{keycloakPermission.Name}' has invalid or missing ID, skipping");
+                    continue;
+                }
+
+                var localPermission = localPermissions.FirstOrDefault(p => p.Id == keycloakPermissionId);
 
                 // Find scope (use first scope from permission)
                 var scopeName = keycloakPermission.Scopes?.FirstOrDefault();
@@ -88,10 +93,9 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
                     // Create new permission
                     localPermission = new Permission
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakPermissionId,
                         Name = keycloakPermission.Name,
                         Description = keycloakPermission.Name,
-                        KeycloakPermissionId = keycloakPermissionIdGuid,
                         ScopeId = scope.Id,
                         ResourceId = resource.Id,
                         PolicyId = policy.Id,
@@ -105,7 +109,6 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
                 {
                     // Update existing permission
                     localPermission.Name = keycloakPermission.Name;
-                    localPermission.KeycloakPermissionId = keycloakPermissionIdGuid;
                     localPermission.ScopeId = scope.Id;
                     localPermission.ResourceId = resource.Id;
                     localPermission.PolicyId = policy.Id;
@@ -118,12 +121,11 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
 
             // Delete permissions that don't exist in Keycloak
             var keycloakPermissionIds = keycloakPermissions
-                .Select(p => Guid.TryParse(p.Id, out var id) ? (Guid?)id : null)
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
+                .Where(p => !string.IsNullOrEmpty(p.Id) && Guid.TryParse(p.Id, out _))
+                .Select(p => Guid.Parse(p.Id!))
                 .ToHashSet();
             var permissionsToDelete = localPermissions
-                .Where(p => p.KeycloakPermissionId.HasValue && !keycloakPermissionIds.Contains(p.KeycloakPermissionId.Value))
+                .Where(p => !keycloakPermissionIds.Contains(p.Id))
                 .ToList();
 
             foreach (var permissionToDelete in permissionsToDelete)

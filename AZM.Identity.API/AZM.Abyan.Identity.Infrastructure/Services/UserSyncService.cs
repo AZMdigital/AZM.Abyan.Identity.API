@@ -41,15 +41,20 @@ public class UserSyncService : IUserSyncService
             // Process each Keycloak user
             foreach (var keycloakUser in keycloakUsers)
             {
-                var localUser = localUsers.FirstOrDefault(u => u.KeycloakUserId?.ToString() == keycloakUser.Id);
+                if (!Guid.TryParse(keycloakUser.Id, out var keycloakUserId))
+                {
+                    result.Errors.Add($"Invalid Keycloak user ID format: {keycloakUser.Id}");
+                    continue;
+                }
+
+                var localUser = localUsers.FirstOrDefault(u => u.Id == keycloakUserId);
 
                 if (localUser == null)
                 {
                     // Create new user
                     localUser = new User
                     {
-                        Id = Guid.NewGuid(),
-                        KeycloakUserId = Guid.TryParse(keycloakUser.Id, out var userId) ? userId : null,
+                        Id = keycloakUserId,
                         Username = keycloakUser.Username,
                         Email = keycloakUser.Email,
                         Firstname = keycloakUser.FirstName,
@@ -68,10 +73,6 @@ public class UserSyncService : IUserSyncService
                     localUser.Email = keycloakUser.Email;
                     localUser.Firstname = keycloakUser.FirstName;
                     localUser.Lastname = keycloakUser.LastName;
-                    if (Guid.TryParse(keycloakUser.Id, out var userId))
-                    {
-                        localUser.KeycloakUserId = userId;
-                    }
                     localUser.UpdatedAt = DateTime.UtcNow;
                     localUser.UpdatedBy = Guid.Empty;
                     _userRepository.Update(localUser);
@@ -80,9 +81,12 @@ public class UserSyncService : IUserSyncService
             }
 
             // Delete users that don't exist in Keycloak
-            var keycloakUserIds = keycloakUsers.Select(u => u.Id).ToHashSet();
+            var keycloakUserIds = keycloakUsers
+                .Where(u => Guid.TryParse(u.Id, out _))
+                .Select(u => Guid.Parse(u.Id))
+                .ToHashSet();
             var usersToDelete = localUsers
-                .Where(u => u.KeycloakUserId.HasValue && !keycloakUserIds.Contains(u.KeycloakUserId.Value.ToString()))
+                .Where(u => !keycloakUserIds.Contains(u.Id))
                 .ToList();
 
             foreach (var userToDelete in usersToDelete)

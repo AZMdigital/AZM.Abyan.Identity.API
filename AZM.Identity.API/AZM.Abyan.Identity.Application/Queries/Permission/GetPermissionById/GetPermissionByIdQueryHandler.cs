@@ -1,0 +1,49 @@
+using AZM.Abyan.Identity.Application.DTOs.Permissions;
+using AZM.Abyan.Identity.Application.DTOs.Responses;
+using AZM.Abyan.Identity.Application.Resources;
+using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
+
+namespace AZM.Abyan.Identity.Application.Queries.Permission.GetPermissionById;
+
+public class GetPermissionByIdQueryHandler(
+    IRepository<Domain.Entities.Permission, Guid> permissionRepository,
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<GetPermissionByIdQuery, Result<PermissionResponse>>
+{
+    private readonly IRepository<Domain.Entities.Permission, Guid> _permissionRepository = permissionRepository;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
+
+    public async Task<Result<PermissionResponse>> Handle(GetPermissionByIdQuery request, CancellationToken cancellationToken)
+    {
+        var permission = await _permissionRepository.GetWhere(p => p.Id == request.PermissionId && !p.IsDeleted)
+            .Include(p => p.Scope)
+            .Include(p => p.Resources)
+            .Include(p => p.Policy)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (permission == null)
+        {
+            return Result<PermissionResponse>.NotFound(_localizer["PermissionNotFound"] ?? "Permission not found");
+        }
+
+        var response = new PermissionResponse
+        {
+            Id = permission.Id,
+            Name = permission.Name,
+            Description = permission.Description,
+            ScopeId = permission.ScopeId,
+            ScopeName = permission.Scope?.Name ?? string.Empty,
+            ResourceId = permission.ResourceId,
+            ResourceName = permission.Resources?.Name ?? string.Empty,
+            PolicyId = permission.PolicyId,
+            PolicyName = permission.Policy?.Name ?? string.Empty,
+            CreatedAt = permission.CreatedAt,
+            UpdatedAt = permission.UpdatedAt
+        };
+
+        return Result<PermissionResponse>.Success(response);
+    }
+}
+

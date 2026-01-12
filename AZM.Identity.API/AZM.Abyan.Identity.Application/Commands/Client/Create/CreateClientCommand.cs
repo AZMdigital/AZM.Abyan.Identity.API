@@ -14,7 +14,6 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; }
-        public Guid? KeycloakClientId { get; set; }
-        public Guid RealmId { get; set; }
+        public string RealmName { get; set; } = string.Empty;
     }
 }

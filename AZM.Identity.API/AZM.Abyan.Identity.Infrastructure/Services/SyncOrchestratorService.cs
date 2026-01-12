@@ -74,8 +74,8 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                 // Get all tenants to process
                 var tenants = await _tenantRepository.GetWhere().ToListAsync(cancellationToken);
 
-                // Process each tenant/realm
-                foreach (var tenant in tenants.Where(t => t.KeycloakRealmId.HasValue))
+                // Process each tenant/realm (all tenants now have IDs from Keycloak)
+                foreach (var tenant in tenants)
                 {
                     var realm = tenant.Name;
 
@@ -96,10 +96,10 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                     // Get all clients for this tenant
                     var clients = await _clientRepository.GetWhere(c => c.RealmId == tenant.Id).ToListAsync(cancellationToken);
 
-                    // Process each client
-                    foreach (var client in clients.Where(c => c.KeycloakClientId.HasValue))
+                    // Process each client (all clients now have IDs from Keycloak)
+                    foreach (var client in clients)
                     {
-                        var clientId = client.KeycloakClientId.Value.ToString();
+                        var clientId = client.Id.ToString();
 
                         // Step 4: Sync Roles for this client (pass both Keycloak client ID and local client ID)
                         result.EntityResults[$"Roles-{realm}-{client.Name}"] = await _roleSyncService.SyncRolesAsync(realm, clientId, client.Id, adminToken, cancellationToken);

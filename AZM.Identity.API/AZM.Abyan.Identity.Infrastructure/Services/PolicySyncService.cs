@@ -54,8 +54,13 @@ public class PolicySyncService : IPolicySyncService
             // Process each Keycloak policy (only role policies)
             foreach (var keycloakPolicy in keycloakPolicies.Where(p => p.Type == "role"))
             {
-                var keycloakPolicyIdGuid = Guid.TryParse(keycloakPolicy.Id, out var policyId) ? (Guid?)policyId : null;
-                var localPolicy = localPolicies.FirstOrDefault(p => p.KeycloakPolicyId == keycloakPolicyIdGuid);
+                if (string.IsNullOrEmpty(keycloakPolicy.Id) || !Guid.TryParse(keycloakPolicy.Id, out var keycloakPolicyId))
+                {
+                    result.Errors.Add($"Policy '{keycloakPolicy.Name}' has invalid or missing ID, skipping");
+                    continue;
+                }
+
+                var localPolicy = localPolicies.FirstOrDefault(p => p.Id == keycloakPolicyId);
 
                 // Extract role name from policy config
                 Role? role = null;
@@ -68,7 +73,10 @@ public class PolicySyncService : IPolicySyncService
                         if (rolesList != null && rolesList.Any())
                         {
                             var roleId = rolesList.First().Id;
-                            role = allRoles.FirstOrDefault(r => r.KeycloakRoleId?.ToString() == roleId);
+                            if (Guid.TryParse(roleId, out var roleIdGuid))
+                            {
+                                role = allRoles.FirstOrDefault(r => r.Id == roleIdGuid);
+                            }
                         }
                     }
                     catch
@@ -89,9 +97,8 @@ public class PolicySyncService : IPolicySyncService
                     // Create new policy
                     localPolicy = new Policy
                     {
-                        Id = Guid.NewGuid(),
+                        Id = keycloakPolicyId,
                         Name = keycloakPolicy.Name,
-                        KeycloakPolicyId = keycloakPolicyIdGuid,
                         RoleId = role.Id,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
@@ -103,7 +110,6 @@ public class PolicySyncService : IPolicySyncService
                 {
                     // Update existing policy
                     localPolicy.Name = keycloakPolicy.Name;
-                    localPolicy.KeycloakPolicyId = keycloakPolicyIdGuid;
                     localPolicy.RoleId = role.Id;
                     localPolicy.UpdatedAt = DateTime.UtcNow;
                     localPolicy.UpdatedBy = Guid.Empty;
@@ -114,12 +120,11 @@ public class PolicySyncService : IPolicySyncService
 
             // Delete policies that don't exist in Keycloak
             var keycloakPolicyIds = keycloakPolicies
-                .Select(p => Guid.TryParse(p.Id, out var id) ? (Guid?)id : null)
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
+                .Where(p => !string.IsNullOrEmpty(p.Id) && Guid.TryParse(p.Id, out _))
+                .Select(p => Guid.Parse(p.Id!))
                 .ToHashSet();
             var policiesToDelete = localPolicies
-                .Where(p => p.KeycloakPolicyId.HasValue && !keycloakPolicyIds.Contains(p.KeycloakPolicyId.Value))
+                .Where(p => !keycloakPolicyIds.Contains(p.Id))
                 .ToList();
 
             foreach (var policyToDelete in policiesToDelete)

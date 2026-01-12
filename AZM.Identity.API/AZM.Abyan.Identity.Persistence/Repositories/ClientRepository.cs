@@ -17,7 +17,7 @@ public class ClientRepository(IdentityDbContext context, ICurrentUserService _cu
     }
     public async Task<bool> DeleteClientAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var client = await GetWhere(s=>s.KeycloakClientId==id).FirstOrDefaultAsync(cancellationToken);
+        var client = await GetByIdAsync(id, cancellationToken);
 
         if (client == null) return false;
 
@@ -28,8 +28,8 @@ public class ClientRepository(IdentityDbContext context, ICurrentUserService _cu
     }
     public async Task<Client?> GetClientByKeycloakIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await GetWhere(f => f.KeycloakClientId == id)
-            .FirstOrDefaultAsync(cancellationToken);
+        // Now Id is the Keycloak ID, so we can use GetByIdAsync directly
+        return await GetByIdAsync(id, cancellationToken);
     }
     public async Task<bool> UpdateAsync(Client client, CancellationToken cancellationToken = default)
     {

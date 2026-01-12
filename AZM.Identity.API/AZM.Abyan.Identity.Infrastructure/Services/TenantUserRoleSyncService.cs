@@ -74,7 +74,7 @@ public class TenantUserRoleSyncService : ITenantUserRoleSyncService
                     List<AZM.Abyan.Identity.Application.DTOs.Roles.ClientRoleResponse> clientRoles;
                     try
                     {
-                        clientRoles = await _keycloakService.GetUserClientRolesAsync(keycloakUser.Id, client.Id, adminToken, cancellationToken);
+                        clientRoles = await _keycloakService.GetUserClientRolesAsync(keycloakUser.Id, client.Id.ToString(), adminToken, cancellationToken);
                     }
                     catch (HttpRequestException ex) when (ex.Message.Contains("404") || ex.Message.Contains("Not Found"))
                     {
@@ -83,7 +83,7 @@ public class TenantUserRoleSyncService : ITenantUserRoleSyncService
                     }
                     foreach (var clientRole in clientRoles)
                     {
-                        var role = allRoles.FirstOrDefault(r => r.KeycloakRoleId?.ToString() == clientRole.Id && r.ClientId.ToString() == client.Id);
+                        var role = allRoles.FirstOrDefault(r => r.KeycloakRoleId?.ToString() == clientRole.Id && r.ClientId.ToString() == client.Id.ToString());
                         if (role != null)
                         {
                             keycloakAssignments.Add((localUser.Id, role.Id));

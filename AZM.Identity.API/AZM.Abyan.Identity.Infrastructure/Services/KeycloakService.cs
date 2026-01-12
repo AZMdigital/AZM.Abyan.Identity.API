@@ -466,22 +466,25 @@ public class KeycloakService : IKeycloakService
         return clients ?? new List<ClientResponse>();
     }
 
-    public async Task<JsonElement?> GetClientByIdAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<ClientResponse?> GetClientByIdAsync(string realm,string clientId,string adminToken,CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{realm}/clients/?clientId={clientId}"; 
+        var endpoint = $"/admin/realms/{realm}/clients?clientId={clientId}";
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+        httpRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
 
-        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        if (!response.IsSuccessStatusCode)
             return null;
 
-        response.EnsureSuccessStatusCode();
-        
-        return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+        var clients = await response.Content
+            .ReadFromJsonAsync<List<ClientResponse>>(cancellationToken: cancellationToken);
+
+        return clients?.FirstOrDefault();
     }
+
 
     public async Task<Guid> CreateClientAsync(string realm, CreateClientRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
@@ -540,11 +543,11 @@ public class KeycloakService : IKeycloakService
         {
             name = request.Name,
             description = request.Description,
-            enabled = request.Enabled,
-            serviceAccountsEnabled = request.ServiceAccountsEnabled,
-            authorizationServicesEnabled = request.AuthorizationServicesEnabled,
-            redirectUris = request.RedirectUris,
-            webOrigins = request.WebOrigins
+            enabled = true,
+            serviceAccountsEnabled = true,
+            authorizationServicesEnabled = true,
+            redirectUris = Array.Empty<string>(),
+            webOrigins = Array.Empty<string>()
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(client);

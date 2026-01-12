@@ -26,6 +26,17 @@ public class ClientRepository(IdentityDbContext context, ICurrentUserService _cu
         await SaveChangesAsync(cancellationToken);
         return true;
     }
+    public async Task<Client?> GetClientByKeycloakIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await GetWhere(f => f.KeycloakClientId == id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+    public async Task<bool> UpdateAsync(Client client, CancellationToken cancellationToken = default)
+    {
+        Update(client);
+        await SaveChangesAsync(cancellationToken);
+        return true;
+    }
     //public async Task<IReadOnlyList<OssFile>> AddRangeAsync(List<OssFile> files, CancellationToken cancellationToken = default)
     //{
     //    await CreateManyAsync(files, cancellationToken);

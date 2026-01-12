@@ -41,7 +41,7 @@ public class ClientSyncService : IClientSyncService
             // Process each Keycloak client
             foreach (var keycloakClient in keycloakClients)
             {
-                var localClient = localClients.FirstOrDefault(c => c.KeycloakClientId?.ToString() == keycloakClient.Id);
+                var localClient = localClients.FirstOrDefault(c => c.KeycloakClientId?.ToString() == keycloakClient.Id.ToString());
 
                 if (localClient == null)
                 {
@@ -51,7 +51,7 @@ public class ClientSyncService : IClientSyncService
                         Id = Guid.NewGuid(),
                         Name = keycloakClient.ClientId, // Use ClientId instead of Name (ClientId is the actual identifier, Name is optional)
                         Description = keycloakClient.Description ?? string.Empty,
-                        KeycloakClientId = Guid.TryParse(keycloakClient.Id, out var clientId) ? clientId : null,
+                        KeycloakClientId = Guid.TryParse(keycloakClient.Id.ToString(), out var clientId) ? clientId : null,
                         RealmId = tenantId,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
@@ -64,7 +64,7 @@ public class ClientSyncService : IClientSyncService
                     // Update existing client
                     localClient.Name = keycloakClient.ClientId; // Use ClientId instead of Name (ClientId is the actual identifier, Name is optional)
                     localClient.Description = keycloakClient.Description ?? string.Empty;
-                    if (Guid.TryParse(keycloakClient.Id, out var clientId))
+                    if (Guid.TryParse(keycloakClient.Id.ToString(), out var clientId))
                     {
                         localClient.KeycloakClientId = clientId;
                     }
@@ -78,7 +78,7 @@ public class ClientSyncService : IClientSyncService
             // Delete clients that don't exist in Keycloak
             var keycloakClientIds = keycloakClients.Select(c => c.Id).ToHashSet();
             var clientsToDelete = localClients
-                .Where(c => c.KeycloakClientId.HasValue && !keycloakClientIds.Contains(c.KeycloakClientId.Value.ToString()))
+                .Where(c => c.KeycloakClientId.HasValue && !keycloakClientIds.Contains(c.KeycloakClientId.Value))
                 .ToList();
 
             foreach (var clientToDelete in clientsToDelete)

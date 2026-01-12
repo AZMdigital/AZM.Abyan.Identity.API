@@ -126,4 +126,7 @@
   <data name="ClientNotFound" xml:space="preserve">
     <value>العميل غير موجود</value>
   </data>
+  <data name="ClientUpdateSuccessfully" xml:space="preserve">
+    <value>تم تعديل العميل بنجاح </value>
+  </data>
 </root>

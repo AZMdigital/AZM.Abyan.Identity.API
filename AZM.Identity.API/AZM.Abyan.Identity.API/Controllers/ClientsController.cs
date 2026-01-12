@@ -1,8 +1,11 @@
 using AZM.Abyan.Identity.Application.Commands.Client.Create;
 using AZM.Abyan.Identity.Application.Commands.Client.Delete;
+using AZM.Abyan.Identity.Application.Commands.Client.Update;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
+using AZM.Abyan.Identity.Application.Queries.Client.GetClientById;
 using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -27,7 +30,22 @@ public class ClientsController : ControllerBase
         try
         {
             var clients = await _clientService.GetClientsAsync(realm, cancellationToken);
-            return Ok(clients);
+            List<ClientResponse> Response = new List<ClientResponse>();
+            if (clients.Count > 0) 
+            {  
+                foreach (var client in clients)
+                {
+                    ClientResponse clientResponse = new ClientResponse();
+                    clientResponse.KeyCloakClientId = client.Id;
+                    clientResponse.Name = client.Name;
+                    clientResponse.Description = client.Description;
+                    clientResponse.ClientId = client.ClientId;
+                    var getId = await _mediator.Send(new GetClientByKeycloakIdQuery(client.Id));
+                    clientResponse.Id = getId.Data;
+                    Response.Add(clientResponse);
+                }
+            }
+            return Ok(Response);
         }
         catch (Exception ex)
         {
@@ -35,16 +53,24 @@ public class ClientsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ClientResponse>> GetClientById(string realm, string id, CancellationToken cancellationToken)
+    [HttpGet("{clientName}")]
+    public async Task<ActionResult<ClientResponse>> GetClientById(string realm, string clientName, CancellationToken cancellationToken)
     {
         try
         {
-            var client = await _clientService.GetClientByIdAsync(realm, id, cancellationToken);
-            if (client == null)
-                return NotFound(new { message = $"Client with id {id} not found in realm {realm}" });
+            var client = await _clientService.GetClientByIdAsync(realm, clientName, cancellationToken);
+            ClientResponse clientResponse = new ClientResponse();
+            clientResponse.KeyCloakClientId = client.Id;
+            clientResponse.Name = client.Name;
+            clientResponse.Description = client.Description;
+            clientResponse.ClientId = client.ClientId;
+            var getId = await _mediator.Send(new GetClientByKeycloakIdQuery(client.Id));
+            clientResponse.Id = getId.Data;
 
-            return Ok(client);
+            if (client == null || clientResponse ==null)
+                return NotFound(new { message = $"Client with id {clientName} not found in realm {realm}" });
+
+            return Ok(clientResponse);
         }
         catch (Exception ex)
         {
@@ -56,8 +82,8 @@ public class ClientsController : ControllerBase
     {
         try
         {
-           
             var result= await _clientService.CreateClientAsync(realm, request, cancellationToken);
+            if (result != Guid.Empty) {
             CreateClientCommand command = new CreateClientCommand();
             command.Name = request.Name;
             command.Description = request.Description;
@@ -65,6 +91,8 @@ public class ClientsController : ControllerBase
             command.KeycloakClientId = result;
             var resultDB = await _mediator.Send(command);
             return StatusCode(resultDB.StatusCode, resultDB);
+            }
+            return BadRequest();
         }
         catch (Exception ex)
         {
@@ -78,6 +106,8 @@ public class ClientsController : ControllerBase
         try
         {
             await _clientService.UpdateClientAsync(realm, id, request, cancellationToken);
+            request.ClientId = id;
+            var result = await _mediator.Send(new UpdateClientCommand(request));
             return Ok(new { message = $"Client '{id}' updated successfully in realm '{realm}'" });
         }
         catch (Exception ex)

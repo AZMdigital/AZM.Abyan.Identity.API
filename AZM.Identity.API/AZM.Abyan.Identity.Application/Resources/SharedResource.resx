@@ -126,4 +126,7 @@
   <data name="ClientNotFound" xml:space="preserve">
     <value>Client not found</value>
   </data>
+  <data name="ClientUpdateSuccessfully" xml:space="preserve">
+    <value>Client Update Successfully</value>
+  </data>
 </root>

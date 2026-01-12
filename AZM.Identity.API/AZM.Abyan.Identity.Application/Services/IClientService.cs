@@ -7,7 +7,7 @@ namespace AZM.Abyan.Identity.Application.Services;
 public interface IClientService
 {
     Task<List<ClientResponse>> GetClientsAsync(string realm, CancellationToken cancellationToken = default);
-    Task<JsonElement?> GetClientByIdAsync(string realm, string clientId, CancellationToken cancellationToken = default);
+    Task<ClientResponse?> GetClientByIdAsync(string realm, string clientId, CancellationToken cancellationToken = default);
     Task<Guid> CreateClientAsync(string realm, CreateClientRequest request, CancellationToken cancellationToken = default);
     Task UpdateClientAsync(string realm, string clientId, UpdateClientRequest request, CancellationToken cancellationToken = default);
     Task DeleteClientAsync(string realm, string clientId, CancellationToken cancellationToken = default);

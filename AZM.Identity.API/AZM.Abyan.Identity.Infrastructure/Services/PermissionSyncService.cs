@@ -90,32 +90,32 @@ public class PermissionSyncService : IPermissionSyncService
                 return;
             }
 
-            var clientUuid = targetClient.Id;
+            Guid clientUuid = targetClient.Id;
             _logger.LogInformation($"Syncing with Keycloak Client: {_keycloakConfig.ClientId} (UUID: {clientUuid}) in realm '{realm}'");
 
             // Ensure Authorization Services are enabled
-            if (!targetClient.AuthorizationServicesEnabled)
-            {
+            //if (!targetClient.AuthorizationServicesEnabled)
+            //{
                 _logger.LogInformation($"Authorization Services not enabled for client. Enabling now...");
-                await _keycloakService.UpdateClientAsync(realm, clientUuid, new UpdateClientRequest
+                await _keycloakService.UpdateClientAsync(realm, clientUuid.ToString(), new UpdateClientRequest
                 {
                     ClientId = targetClient.ClientId,
                     Name = targetClient.Name,
                     Description = targetClient.Description,
-                    Enabled = targetClient.Enabled,
-                    Protocol = targetClient.Protocol,
+                    Enabled = true,
+                    Protocol = "openid-connect",
                     PublicClient = false, // Must be confidential for AuthZ/ServiceAccounts
                     BearerOnly = false,
                     ServiceAccountsEnabled = true, // Required for AuthZ often
                     AuthorizationServicesEnabled = true,
-                    RedirectUris = targetClient.RedirectUris,
-                    WebOrigins = targetClient.WebOrigins
+                    RedirectUris = Array.Empty<string>().ToList(),
+                    WebOrigins =Array.Empty<string>().ToList()
                 }, adminToken, cancellationToken);
                 _logger.LogInformation("Authorization Services successfully enabled.");
-            }
+            //}
 
             // Get existing client roles ONCE
-            var existingRoles = await _keycloakService.GetClientRolesAsync(realm, clientUuid, adminToken, cancellationToken);
+            var existingRoles = await _keycloakService.GetClientRolesAsync(realm, clientUuid.ToString(), adminToken, cancellationToken);
             var existingRoleNames = existingRoles.Select(r => r.Name).ToHashSet();
 
             // Group by Controller (Resource)
@@ -132,7 +132,7 @@ public class PermissionSyncService : IPermissionSyncService
 
                 // 1. Manage Keycloak Resource
                 var resourceName = $"res:{controllerName}";
-                var existingResource = await _keycloakService.GetResourceAsync(realm, clientUuid, resourceName, adminToken, cancellationToken);
+                var existingResource = await _keycloakService.GetResourceAsync(realm, clientUuid.ToString(), resourceName, adminToken, cancellationToken);
                 
                 Guid keycloakResourceId;
                 var resourceDto = new AZM.Abyan.Identity.Application.DTOs.AuthZ.ResourceDto
@@ -147,7 +147,7 @@ public class PermissionSyncService : IPermissionSyncService
                 if (existingResource == null)
                 {
                     _logger.LogInformation($"Creating Keycloak Resource '{resourceName}'...");
-                    keycloakResourceId = await _keycloakService.CreateResourceAsync(realm, clientUuid, resourceDto, adminToken, cancellationToken);
+                    keycloakResourceId = await _keycloakService.CreateResourceAsync(realm, clientUuid.ToString(), resourceDto, adminToken, cancellationToken);
                     _logger.LogInformation($"Successfully created Resource '{resourceName}' (ID: {keycloakResourceId}).");
                 }
                 else
@@ -155,7 +155,7 @@ public class PermissionSyncService : IPermissionSyncService
                     _logger.LogInformation($"Keycloak Resource '{resourceName}' already exists. Updating...");
                     keycloakResourceId = existingResource.Id.Value;
                     resourceDto.Id = keycloakResourceId;
-                    await _keycloakService.UpdateResourceAsync(realm, clientUuid, resourceDto, adminToken, cancellationToken);
+                    await _keycloakService.UpdateResourceAsync(realm, clientUuid.ToString(), resourceDto, adminToken, cancellationToken);
                     _logger.LogInformation($"Successfully updated Resource '{resourceName}'.");
                 }
 
@@ -184,7 +184,7 @@ public class PermissionSyncService : IPermissionSyncService
                     if (!existingRoleNames.Contains(permDef.Name))
                     {
                         _logger.LogInformation($"Creating client role '{permDef.Name}' in Keycloak.");
-                        await _keycloakService.CreateClientRoleAsync(realm, clientUuid, new CreateClientRoleRequest
+                        await _keycloakService.CreateClientRoleAsync(realm, clientUuid.ToString(), new CreateClientRoleRequest
                         {
                             Name = permDef.Name,
                             Description = permDef.Description ?? string.Empty
@@ -195,12 +195,12 @@ public class PermissionSyncService : IPermissionSyncService
 
                     // b. Manage Policy (Role-based)
                     var policyName = $"pol:{controllerName}:{permDef.Scope.Name}";
-                    var existingPolicy = await _keycloakService.GetPolicyAsync(realm, clientUuid, policyName, adminToken, cancellationToken);
+                    var existingPolicy = await _keycloakService.GetPolicyAsync(realm, clientUuid.ToString(), policyName, adminToken, cancellationToken);
                     string keycloakPolicyId;
                     if (existingPolicy == null)
                     {
                         _logger.LogInformation($"Creating Keycloak Policy '{policyName}'...");
-                        keycloakPolicyId = await _keycloakService.CreateRolePolicyAsync(realm, clientUuid, policyName, new[] { permDef.Name }, adminToken, cancellationToken);
+                        keycloakPolicyId = await _keycloakService.CreateRolePolicyAsync(realm, clientUuid.ToString(), policyName, new[] { permDef.Name }, adminToken, cancellationToken);
                         _logger.LogInformation($"Successfully created Policy '{policyName}' (ID: {keycloakPolicyId}).");
                     }
                     else
@@ -211,14 +211,14 @@ public class PermissionSyncService : IPermissionSyncService
 
                     // c. Manage Scope-based Permission
                     var authzPermissionName = $"perm:{controllerName}:{permDef.Scope.Name}";
-                    var existingAuthzPerm = await _keycloakService.GetPermissionAsync(realm, clientUuid, authzPermissionName, adminToken, cancellationToken);
+                    var existingAuthzPerm = await _keycloakService.GetPermissionAsync(realm, clientUuid.ToString(), authzPermissionName, adminToken, cancellationToken);
                     string keycloakAuthzPermId;
                     if (existingAuthzPerm == null)
                     {
                         _logger.LogInformation($"Creating Keycloak Permission '{authzPermissionName}'...");
                         keycloakAuthzPermId = await _keycloakService.CreateScopePermissionAsync(
                             realm,
-                            clientUuid, 
+                            clientUuid.ToString(), 
                             authzPermissionName, 
                             [resourceName], 
                             [permDef.Scope.Name], 

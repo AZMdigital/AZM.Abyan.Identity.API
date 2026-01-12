@@ -89,7 +89,7 @@ public class UserService : IUserService
 
         foreach (var client in clients)
         {
-            var roles = await _keycloakService.GetUserClientRolesAsync(userId, client.Id, adminToken, cancellationToken);
+            var roles = await _keycloakService.GetUserClientRolesAsync(userId, client.Id.ToString(), adminToken, cancellationToken);
             if (roles.Any())
             {
                 clientRoles[client.ClientId] = roles;

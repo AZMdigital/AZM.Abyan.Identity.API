@@ -20,8 +20,6 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
         {
             try
             {
-
-            
             var client = request.Adapt<Domain.Entities.Client>();
             client.Id =Guid.NewGuid(); 
             client.Name = request.Name;

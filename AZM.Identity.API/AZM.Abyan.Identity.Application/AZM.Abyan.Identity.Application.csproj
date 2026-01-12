@@ -15,9 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commands\Client\Update\" />
     <Folder Include="Queries\Client\GetClients\" />
-    <Folder Include="Queries\Client\GetClientById\" />
+    <Folder Include="Queries\NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>

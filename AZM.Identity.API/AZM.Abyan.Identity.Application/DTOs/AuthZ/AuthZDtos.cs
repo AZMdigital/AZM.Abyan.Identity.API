@@ -25,9 +25,24 @@ public class ResourceDto
 
 public class ScopeDto
 {
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 }
+public class ScopeUpdateDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("displayName")]
+    public string? DisplayName { get; set; }
+
+}
+
 
 public class PolicyDto
 {

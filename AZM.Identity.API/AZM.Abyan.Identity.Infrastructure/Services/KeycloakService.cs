@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -342,8 +343,15 @@ public class KeycloakService : IKeycloakService
         roleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var roleResponse = await _httpClient.SendAsync(roleRequest, cancellationToken);
-        roleResponse.EnsureSuccessStatusCode();
+        //roleResponse.EnsureSuccessStatusCode();
+        var body = await roleResponse.Content.ReadAsStringAsync(cancellationToken);
 
+        if (!roleResponse.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Keycloak error {(int)roleResponse.StatusCode}: {body}"
+            );
+        }
         var role = await roleResponse.Content.ReadFromJsonAsync<ClientRoleResponse>(cancellationToken: cancellationToken);
         if (role == null)
             throw new KeyNotFoundException($"Role {roleName} not found in client {clientId}");
@@ -432,6 +440,29 @@ public class KeycloakService : IKeycloakService
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = content
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task UpdateClientRoleAsync(string realm, string clientId, string roleName, UpdateClientRoleRequest request, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}";
+
+        var role = new
+        {
+            name = request.Name,
+            description = request.Description
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(role);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpoint)
         {
             Content = content
         };
@@ -1021,6 +1052,157 @@ public class KeycloakService : IKeycloakService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<ResourceDto?> GetResourceByIdAsync(string realm, string clientId, Guid resourceId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/resource/{resourceId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var resource = await response.Content.ReadFromJsonAsync<ResourceDto>(cancellationToken: cancellationToken);
+        return resource;
+    }
+
+    public async Task DeleteResourceAsync(string realm, string clientId, Guid resourceId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/resource/{resourceId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Delete, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<ScopeDto?> GetScopeAsync(string realm, string clientId, string scopeName, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var scopes = await GetAllScopesAsync(realm, clientId, adminToken, cancellationToken);
+        return scopes.FirstOrDefault(s => s.Name == scopeName);
+    }
+
+    public async Task<ScopeDto?> GetScopeByIdAsync(string realm, string clientId, string scopeId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/scope/{scopeId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var scope = await response.Content.ReadFromJsonAsync<ScopeDto>(cancellationToken: cancellationToken);
+        return scope;
+    }
+
+    public async Task<string> CreateScopeAsync(string realm, string clientId, ScopeDto scope, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/scope";
+
+        var json = System.Text.Json.JsonSerializer.Serialize(scope);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = content
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var created = await response.Content.ReadFromJsonAsync<ScopeDto>(cancellationToken: cancellationToken);
+        return created?.Name ?? string.Empty;
+    }
+
+    public async Task UpdateScopeAsync(string realm, string clientId, string scopeId, ScopeUpdateDto scope, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint =
+     $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/scope/{scopeId}";
+
+        var json = JsonSerializer.Serialize(scope);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
+        {
+            Content = content
+        };
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Keycloak error {(int)response.StatusCode}: {body}");
+        }
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeleteScopeAsync(string realm, string clientId, string scopeId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/scope/{scopeId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Delete, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Keycloak error {(int)response.StatusCode}: {body}"
+            );
+        }
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<PolicyDto?> GetPolicyByIdAsync(string realm, string clientId, string policyId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy/{policyId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var policy = await response.Content.ReadFromJsonAsync<PolicyDto>(cancellationToken: cancellationToken);
+        return policy;
+    }
+
+    public async Task UpdatePolicyAsync(string realm, string clientId, string policyId, PolicyDto policy, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy/{policyId}";
+
+        var json = System.Text.Json.JsonSerializer.Serialize(policy);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpoint)
+        {
+            Content = content
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeletePolicyAsync(string realm, string clientId, string policyId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy/{policyId}";
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Delete, endpoint);
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<PolicyDto?> GetPolicyAsync(string realm, string clientId, string policyName, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy?name={policyName}";
@@ -1074,6 +1256,13 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Keycloak error {(int)response.StatusCode}: {body}"
+            );
+        }
         response.EnsureSuccessStatusCode();
 
         var created = await response.Content.ReadFromJsonAsync<PolicyDto>(cancellationToken: cancellationToken);

@@ -1,4 +1,8 @@
+using AZM.Abyan.Identity.Application.Commands.Role.Assign;
 using AZM.Abyan.Identity.Application.Commands.Role.Create;
+using AZM.Abyan.Identity.Application.Commands.Role.Delete;
+using AZM.Abyan.Identity.Application.Commands.Role.Unassign;
+using AZM.Abyan.Identity.Application.Commands.Role.Update;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
@@ -63,17 +67,62 @@ public class RolesController : ControllerBase
         }
     }
 
+    [HttpPut("clients/{clientId}/{roleName}")]
+    public async Task<ActionResult> UpdateClientRole(string realm, string clientId, string roleName, [FromBody] UpdateClientRoleRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Get role by name to find the local ID
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
+            var role = roles.FirstOrDefault(r => r.Name == roleName);
+            
+            if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
+            {
+                return NotFound(new { message = $"Role '{roleName}' not found" });
+            }
+
+            var command = new UpdateRoleCommand
+            {
+                RoleId = roleIdGuid,
+                UpdateRoleRequest = request,
+                Realm = realm,
+                KeycloakClientId = clientId,
+                RoleName = roleName // Original role name for Keycloak update
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("clients/{clientId}/{roleName}")]
     public async Task<ActionResult> DeleteClientRole(string realm, string clientId, string roleName, CancellationToken cancellationToken)
     {
         try
         {
-            await _roleService.DeleteClientRoleAsync(realm, clientId, roleName, cancellationToken);
-            return Ok(new { message = $"Role '{roleName}' deleted successfully from client '{clientId}' in realm '{realm}'" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
+            // Get role by name to find the local ID
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
+            var role = roles.FirstOrDefault(r => r.Name == roleName);
+            
+            if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
+            {
+                return NotFound(new { message = $"Role '{roleName}' not found" });
+            }
+
+            var command = new DeleteRoleCommand
+            {
+                RoleId = roleIdGuid,
+                Realm = realm,
+                KeycloakClientId = clientId,
+                RoleName = roleName
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -86,12 +135,14 @@ public class RolesController : ControllerBase
     {
         try
         {
-            await _roleService.AssignClientRoleToUserAsync(realm, request, cancellationToken);
-            return Ok(new { message = $"Role {request.RoleName} assigned to user {request.UserId} successfully in realm '{realm}'" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
+            var command = new AssignClientRoleToUserCommand
+            {
+                AssignRoleRequest = request,
+                Realm = realm
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -104,12 +155,14 @@ public class RolesController : ControllerBase
     {
         try
         {
-            await _roleService.RemoveClientRoleFromUserAsync(realm, request, cancellationToken);
-            return Ok(new { message = $"Role {request.RoleName} removed from user {request.UserId} successfully in realm '{realm}'" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
+            var command = new RemoveClientRoleFromUserCommand
+            {
+                AssignRoleRequest = request,
+                Realm = realm
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {

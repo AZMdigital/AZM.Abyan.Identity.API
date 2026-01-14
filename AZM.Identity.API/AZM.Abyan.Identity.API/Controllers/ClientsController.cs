@@ -36,7 +36,6 @@ public class ClientsController : ControllerBase
                 foreach (var client in clients)
                 {
                     ClientResponse clientResponse = new ClientResponse();
-                    clientResponse.KeyCloakClientId = client.Id;
                     clientResponse.Name = client.Name;
                     clientResponse.Description = client.Description;
                     clientResponse.ClientId = client.ClientId;
@@ -60,7 +59,6 @@ public class ClientsController : ControllerBase
         {
             var client = await _clientService.GetClientByIdAsync(realm, clientName, cancellationToken);
             ClientResponse clientResponse = new ClientResponse();
-            clientResponse.KeyCloakClientId = client.Id;
             clientResponse.Name = client.Name;
             clientResponse.Description = client.Description;
             clientResponse.ClientId = client.ClientId;
@@ -130,32 +128,32 @@ public class ClientsController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/roles")]
-    public async Task<ActionResult> CreateClientRole(string realm, string id, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _clientService.CreateClientRoleAsync(realm, id, request, cancellationToken);
-            return Ok(new { message = $"Role '{request.Name}' created for client '{id}' in realm '{realm}' successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    //[HttpPost("{id}/roles")]
+    //public async Task<ActionResult> CreateClientRole(string realm, string id, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _clientService.CreateClientRoleAsync(realm, id, request, cancellationToken);
+    //        return Ok(new { message = $"Role '{request.Name}' created for client '{id}' in realm '{realm}' successfully" });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = ex.Message });
+    //    }
+    //}
 
-    [HttpDelete("{id}/roles/{roleName}")]
-    public async Task<ActionResult> DeleteClientRole(string realm, string id, string roleName, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _clientService.DeleteClientRoleAsync(realm, id, roleName, cancellationToken);
-            return Ok(new { message = $"Role '{roleName}' deleted from client '{id}' in realm '{realm}' successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    //[HttpDelete("{id}/roles/{roleName}")]
+    //public async Task<ActionResult> DeleteClientRole(string realm, string id, string roleName, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _clientService.DeleteClientRoleAsync(realm, id, roleName, cancellationToken);
+    //        return Ok(new { message = $"Role '{roleName}' deleted from client '{id}' in realm '{realm}' successfully" });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = ex.Message });
+    //    }
+    //}
 }
 

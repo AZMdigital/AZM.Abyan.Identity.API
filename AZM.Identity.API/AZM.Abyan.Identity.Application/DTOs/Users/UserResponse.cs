@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace AZM.Abyan.Identity.Application.DTOs.Users;
 
 public class UserResponse
@@ -7,8 +9,11 @@ public class UserResponse
     public string Email { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    [JsonIgnore]
     public bool Enabled { get; set; }
+    [JsonIgnore]
     public bool EmailVerified { get; set; }
+    [JsonIgnore]
     public long CreatedTimestamp { get; set; }
 }
 

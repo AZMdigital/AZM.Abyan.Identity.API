@@ -4,6 +4,7 @@ namespace AZM.Abyan.Identity.Application.DTOs.Clients;
 
 public class UpdateClientRequest
 {
+    [JsonIgnore]
     public string ClientId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

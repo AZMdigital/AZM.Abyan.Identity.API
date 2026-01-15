@@ -8,6 +8,7 @@ using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace AZM.Abyan.Identity.Application.Commands.Resource.Create;
 
@@ -64,6 +65,7 @@ public class CreateResourceCommandHandler(
                 var scopeName = request.CreateResourceRequest.ScopeNames.First();
                 var existingScope = await _scopeRepository.GetWhere(s => s.Name == scopeName)
                     .FirstOrDefaultAsync(cancellationToken);
+
                 
                 if (existingScope == null)
                 {
@@ -102,10 +104,14 @@ public class CreateResourceCommandHandler(
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
                     };
-                    await _scopeRepository.CreateAsync(existingScope, cancellationToken);
+                    await _scopeRepository.CreateAsync(scope, cancellationToken);
                     await _scopeRepository.SaveChangesAsync(cancellationToken);
+                    scopeId = scope.Id;
                 }
-                scopeId = existingScope.Id;
+                else
+                {
+                    scopeId = existingScope.Id;
+                }
             }
 
             // Create local entity with ID from Keycloak

@@ -12,6 +12,7 @@ using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using static System.Net.WebRequestMethods;
@@ -1217,58 +1218,59 @@ public class KeycloakService : IKeycloakService
         return policies?.FirstOrDefault(p => p.Name == policyName);
     }
 
-    public async Task<string> CreateRolePolicyAsync(string realm, string clientId, string policyName, IEnumerable<string> roleNames, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<string> CreateRolePolicyAsync(
+     string realm,
+     string clientId,
+     string policyName,
+     IEnumerable<string> roleNames,
+     string adminToken,
+     CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/policy/role";
-
         var rolesConfig = new List<object>();
-        // Optimisation: assume roles are fetched outside or simple implementation for now:
-        // Getting role ID:
         var roles = await GetClientRolesAsync(realm, clientId, adminToken, cancellationToken);
-        foreach(var r in roleNames)
+        foreach (var r in roleNames)
         {
-             var roleObj = roles.FirstOrDefault(x => x.Name == r);
-             if(roleObj != null)
-             {
-                 rolesConfig.Add(new { id = roleObj.Id, required = true });
-             }
+            var roleObj = roles.FirstOrDefault(x => x.Name == r);
+            if (roleObj != null)
+            {
+                rolesConfig.Add(new
+                {
+                    id = roleObj.Id,
+                    required = true
+                });
+            }
         }
 
         var payload = new
         {
             name = policyName,
+            description = $"Role policy for {policyName}",
             type = "role",
             logic = "POSITIVE",
             decisionStrategy = "UNANIMOUS",
-            config = new
-            {
-                 roles = System.Text.Json.JsonSerializer.Serialize(rolesConfig)
-            }
+            roles = rolesConfig
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        var json = JsonSerializer.Serialize(payload);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = content
         };
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
         if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception(
-                $"Keycloak error {(int)response.StatusCode}: {body}"
-            );
-        }
-        response.EnsureSuccessStatusCode();
+            throw new Exception($"Keycloak error {(int)response.StatusCode}: {body}");
 
         var created = await response.Content.ReadFromJsonAsync<PolicyDto>(cancellationToken: cancellationToken);
         return created?.Id ?? string.Empty;
     }
-
     public async Task<PermissionDto?> GetPermissionAsync(string realm, string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients/{clientId}/authz/resource-server/permission?name={permissionName}";
@@ -1308,6 +1310,10 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+    if (!response.IsSuccessStatusCode)
+        throw new Exception($"Keycloak error {(int)response.StatusCode}: {body}");
         response.EnsureSuccessStatusCode();
 
         var created = await response.Content.ReadFromJsonAsync<PermissionDto>(cancellationToken: cancellationToken);

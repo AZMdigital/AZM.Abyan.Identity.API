@@ -3,3 +3,5 @@
 ################################################################################
 
 /AZM.Identity.API/AZM.Abyan.Identity.API/appsettings.json
+/.vscode
+/.gitignore

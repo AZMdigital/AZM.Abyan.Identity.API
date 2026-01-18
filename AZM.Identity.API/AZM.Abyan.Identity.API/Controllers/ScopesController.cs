@@ -2,9 +2,11 @@ using AZM.Abyan.Identity.Application.Commands.Scope.Create;
 using AZM.Abyan.Identity.Application.Commands.Scope.Delete;
 using AZM.Abyan.Identity.Application.Commands.Scope.Update;
 using AZM.Abyan.Identity.Application.DTOs.Scopes;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -14,11 +16,13 @@ public class ScopesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IKeycloakService _keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public ScopesController(IMediator mediator, IKeycloakService keycloakService)
+    public ScopesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer)
     {
         _mediator = mediator;
         _keycloakService = keycloakService;
+        _localizer = localizer;
     }
 
     [HttpGet]
@@ -32,7 +36,7 @@ public class ScopesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -45,13 +49,13 @@ public class ScopesController : ControllerBase
             var scope = await _keycloakService.GetScopeAsync(realm, clientId, scopeName, adminToken, cancellationToken);
             
             if (scope == null)
-                return NotFound(new { message = $"Scope with name {scopeName} not found" });
+                return NotFound(new { message = _localizer["ScopeNotFound"] });
 
             return Ok(scope);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -72,7 +76,7 @@ public class ScopesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -83,7 +87,7 @@ public class ScopesController : ControllerBase
         {
             if (!Guid.TryParse(scopeId, out var scopeIdGuid))
             {
-                return BadRequest(new { message = "Invalid scope ID format" });
+                return BadRequest(new { message = _localizer["InvalidScopeId"] });
             }
 
             // Get Keycloak scope ID - you may need to store this mapping or fetch it
@@ -102,7 +106,7 @@ public class ScopesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -113,7 +117,7 @@ public class ScopesController : ControllerBase
         {
             if (!Guid.TryParse(scopeId, out var scopeIdGuid))
             {
-                return BadRequest(new { message = "Invalid scope ID format" });
+                return BadRequest(new { message = _localizer["InvalidScopeId"] });
             }
 
             // Get Keycloak scope ID - you may need to store this mapping or fetch it
@@ -130,7 +134,7 @@ public class ScopesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

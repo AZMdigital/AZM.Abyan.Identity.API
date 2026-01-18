@@ -4,8 +4,10 @@ using AZM.Abyan.Identity.Application.Commands.Permission.Update;
 using AZM.Abyan.Identity.Application.DTOs.Permissions;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissionById;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissions;
+using AZM.Abyan.Identity.Application.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -14,10 +16,12 @@ namespace AZM.Abyan.Identity.API.Controllers;
 public class PermissionsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public PermissionsController(IMediator mediator)
+    public PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer)
     {
         _mediator = mediator;
+        _localizer = localizer;
     }
 
     [HttpGet]
@@ -27,7 +31,7 @@ public class PermissionsController : ControllerBase
         {
             if (!Guid.TryParse(clientId, out var clientIdGuid))
             {
-                return BadRequest(new { message = "Invalid client ID format" });
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
             }
 
             var query = new GetPermissionsQuery
@@ -40,7 +44,7 @@ public class PermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -51,7 +55,7 @@ public class PermissionsController : ControllerBase
         {
             if (!Guid.TryParse(permissionId, out var permissionIdGuid))
             {
-                return BadRequest(new { message = "Invalid permission ID format" });
+                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
             }
 
             var query = new GetPermissionByIdQuery
@@ -64,7 +68,7 @@ public class PermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -75,7 +79,7 @@ public class PermissionsController : ControllerBase
         {
             if (!Guid.TryParse(clientId, out var clientIdGuid))
             {
-                return BadRequest(new { message = "Invalid client ID format" });
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
             }
 
             // Command handler will create permission in Keycloak and save to database
@@ -96,7 +100,7 @@ public class PermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -107,7 +111,7 @@ public class PermissionsController : ControllerBase
         {
             if (!Guid.TryParse(permissionId, out var permissionIdGuid))
             {
-                return BadRequest(new { message = "Invalid permission ID format" });
+                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
             }
 
             var command = new UpdatePermissionCommand
@@ -121,7 +125,7 @@ public class PermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -132,7 +136,7 @@ public class PermissionsController : ControllerBase
         {
             if (!Guid.TryParse(permissionId, out var permissionIdGuid))
             {
-                return BadRequest(new { message = "Invalid permission ID format" });
+                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
             }
 
             var command = new DeletePermissionCommand
@@ -145,7 +149,7 @@ public class PermissionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

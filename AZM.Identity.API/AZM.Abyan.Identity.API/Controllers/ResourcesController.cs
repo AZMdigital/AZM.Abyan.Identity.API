@@ -2,9 +2,11 @@ using AZM.Abyan.Identity.Application.Commands.Resource.Create;
 using AZM.Abyan.Identity.Application.Commands.Resource.Delete;
 using AZM.Abyan.Identity.Application.Commands.Resource.Update;
 using AZM.Abyan.Identity.Application.DTOs.Resources;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -14,11 +16,13 @@ public class ResourcesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IKeycloakService _keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public ResourcesController(IMediator mediator, IKeycloakService keycloakService)
+    public ResourcesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer)
     {
         _mediator = mediator;
         _keycloakService = keycloakService;
+        _localizer = localizer;
     }
 
     [HttpGet]
@@ -32,7 +36,7 @@ public class ResourcesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -43,20 +47,20 @@ public class ResourcesController : ControllerBase
         {
             if (!Guid.TryParse(resourceId, out var resourceIdGuid))
             {
-                return BadRequest(new { message = "Invalid resource ID format" });
+                return BadRequest(new { message = _localizer["InvalidResourceId"] });
             }
 
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
             var resource = await _keycloakService.GetResourceByIdAsync(realm, clientId, resourceIdGuid, adminToken, cancellationToken);
             
             if (resource == null)
-                return NotFound(new { message = $"Resource with id {resourceId} not found" });
+                return NotFound(new { message = _localizer["ResourceNotFound"] });
 
             return Ok(resource);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -67,7 +71,7 @@ public class ResourcesController : ControllerBase
         {
             if (!Guid.TryParse(clientId, out var clientIdGuid))
             {
-                return BadRequest(new { message = "Invalid client ID format" });
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
             }
 
             var command = new CreateResourceCommand
@@ -83,7 +87,7 @@ public class ResourcesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -94,7 +98,7 @@ public class ResourcesController : ControllerBase
         {
             if (!Guid.TryParse(resourceId, out var resourceIdGuid))
             {
-                return BadRequest(new { message = "Invalid resource ID format" });
+                return BadRequest(new { message = _localizer["InvalidResourceId"] });
             }
 
             var command = new UpdateResourceCommand
@@ -110,7 +114,7 @@ public class ResourcesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -121,7 +125,7 @@ public class ResourcesController : ControllerBase
         {
             if (!Guid.TryParse(resourceId, out var resourceIdGuid))
             {
-                return BadRequest(new { message = "Invalid resource ID format" });
+                return BadRequest(new { message = _localizer["InvalidResourceId"] });
             }
 
             var command = new DeleteResourceCommand
@@ -136,7 +140,7 @@ public class ResourcesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

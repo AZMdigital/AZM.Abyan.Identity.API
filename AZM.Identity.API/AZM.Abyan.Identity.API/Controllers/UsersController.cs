@@ -2,9 +2,11 @@ using AZM.Abyan.Identity.Application.Commands.User.Create;
 using AZM.Abyan.Identity.Application.Commands.User.Delete;
 using AZM.Abyan.Identity.Application.Commands.User.Update;
 using AZM.Abyan.Identity.Application.DTOs.Users;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -14,11 +16,13 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly IMediator _mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public UsersController(IUserService userService, IMediator mediator)
+    public UsersController(IUserService userService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
     {
         _userService = userService;
         _mediator = mediator;
+        _localizer = localizer;
     }
 
     [HttpPost]
@@ -42,7 +46,7 @@ public class UsersController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -57,7 +61,7 @@ public class UsersController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -68,14 +72,14 @@ public class UsersController : ControllerBase
         {
             if (!Guid.TryParse(id, out var userId))
             {
-                return BadRequest(new { message = "Invalid user ID format" });
+                return BadRequest(new { message = _localizer["InvalidUserId"] });
             }
             var result = await _mediator.Send(new DeleteUserCommand(userId));
             return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -89,7 +93,7 @@ public class UsersController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -100,13 +104,13 @@ public class UsersController : ControllerBase
         {
             var user = await _userService.GetUserByIdAsync(id, cancellationToken);
             if (user == null)
-                return NotFound(new { message = $"User with id {id} not found" });
+                return NotFound(new { message = _localizer["UserNotFound"] });
 
             return Ok(user);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 

@@ -4,10 +4,12 @@ using AZM.Abyan.Identity.Application.Commands.Role.Delete;
 using AZM.Abyan.Identity.Application.Commands.Role.Unassign;
 using AZM.Abyan.Identity.Application.Commands.Role.Update;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -17,11 +19,13 @@ public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;
     private readonly IMediator _mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public RolesController(IRoleService roleService, IMediator mediator)
+    public RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
     {
         _roleService = roleService;
         _mediator = mediator;
+        _localizer = localizer;
     }
 
     [HttpGet("clients/{clientId}")]
@@ -35,7 +39,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -48,7 +52,7 @@ public class RolesController : ControllerBase
             // clientId parameter is the Keycloak client ID (string), we need to parse it to Guid for local ClientId
             if (!Guid.TryParse(clientId, out var clientIdGuid))
             {
-                return BadRequest(new { message = "Invalid client ID format" });
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
             }
 
             CreateRoleCommand command = new CreateRoleCommand();
@@ -63,7 +67,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -78,7 +82,7 @@ public class RolesController : ControllerBase
             
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
-                return NotFound(new { message = $"Role '{roleName}' not found" });
+                return NotFound(new { message = _localizer["RoleNotFound"] });
             }
 
             var command = new UpdateRoleCommand
@@ -95,7 +99,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -110,7 +114,7 @@ public class RolesController : ControllerBase
             
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
-                return NotFound(new { message = $"Role '{roleName}' not found" });
+                return NotFound(new { message = _localizer["RoleNotFound"] });
             }
 
             var command = new DeleteRoleCommand
@@ -126,7 +130,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -146,7 +150,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -166,7 +170,7 @@ public class RolesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

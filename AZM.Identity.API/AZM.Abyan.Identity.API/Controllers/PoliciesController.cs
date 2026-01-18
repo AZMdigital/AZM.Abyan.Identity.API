@@ -2,9 +2,11 @@ using AZM.Abyan.Identity.Application.Commands.Policy.Create;
 using AZM.Abyan.Identity.Application.Commands.Policy.Delete;
 using AZM.Abyan.Identity.Application.Commands.Policy.Update;
 using AZM.Abyan.Identity.Application.DTOs.Policies;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
@@ -14,11 +16,13 @@ public class PoliciesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IKeycloakService _keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public PoliciesController(IMediator mediator, IKeycloakService keycloakService)
+    public PoliciesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer)
     {
         _mediator = mediator;
         _keycloakService = keycloakService;
+        _localizer = localizer;
     }
 
     [HttpGet]
@@ -32,7 +36,7 @@ public class PoliciesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -45,13 +49,13 @@ public class PoliciesController : ControllerBase
             var policy = await _keycloakService.GetPolicyAsync(realm, clientId, policyName, adminToken, cancellationToken);
             
             if (policy == null)
-                return NotFound(new { message = $"Policy with name {policyName} not found" });
+                return NotFound(new { message = _localizer["PolicyNotFound"] });
 
             return Ok(policy);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -72,7 +76,7 @@ public class PoliciesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -83,7 +87,7 @@ public class PoliciesController : ControllerBase
         {
             if (!Guid.TryParse(policyId, out var policyIdGuid))
             {
-                return BadRequest(new { message = "Invalid policy ID format" });
+                return BadRequest(new { message = _localizer["InvalidPolicyId"] });
             }
 
             // Get Keycloak policy ID - you may need to store this mapping or fetch it
@@ -101,7 +105,7 @@ public class PoliciesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -112,7 +116,7 @@ public class PoliciesController : ControllerBase
         {
             if (!Guid.TryParse(policyId, out var policyIdGuid))
             {
-                return BadRequest(new { message = "Invalid policy ID format" });
+                return BadRequest(new { message = _localizer["InvalidPolicyId"] });
             }
 
             // Get Keycloak policy ID - you may need to store this mapping or fetch it
@@ -129,7 +133,7 @@ public class PoliciesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

@@ -4,10 +4,12 @@ using AZM.Abyan.Identity.Application.Commands.Client.Update;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Queries.Client.GetClientById;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AZM.Abyan.Identity.API.Controllers;
@@ -18,10 +20,12 @@ public class ClientsController : ControllerBase
 {
     private readonly IClientService _clientService;
     private IMediator? _mediator;
-    public ClientsController(IClientService clientService, IMediator Mediator)
+    private readonly IStringLocalizer<SharedResource> _localizer;
+    public ClientsController(IClientService clientService, IMediator Mediator, IStringLocalizer<SharedResource> localizer)
     {
         _clientService = clientService;
         _mediator = Mediator;
+        _localizer = localizer;
     }
 
     [HttpGet]
@@ -48,7 +52,7 @@ public class ClientsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -66,13 +70,13 @@ public class ClientsController : ControllerBase
             clientResponse.Id = getId.Data;
 
             if (client == null || clientResponse == null)
-                return NotFound(new { message = $"Client with id {clientName} not found in realm {realm}" });
+                return NotFound(new { message = _localizer["ClientNotFound"] });
 
             return Ok(clientResponse);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
     [HttpPost]
@@ -92,7 +96,7 @@ public class ClientsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -104,11 +108,11 @@ public class ClientsController : ControllerBase
             await _clientService.UpdateClientAsync(realm, id, request, cancellationToken);
             request.ClientId = id;
             var result = await _mediator.Send(new UpdateClientCommand(request));
-            return Ok(new { message = $"Client '{id}' updated successfully in realm '{realm}'" });
+            return Ok(new { message = _localizer["ClientUpdateSuccessfully"] });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -124,7 +128,7 @@ public class ClientsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 

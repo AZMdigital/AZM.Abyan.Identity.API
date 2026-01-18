@@ -1,6 +1,8 @@
 using AZM.Abyan.Identity.Application.DTOs.Auth;
+using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System.Security.Claims;
 
 namespace AZM.Abyan.Identity.API.Controllers;
@@ -11,11 +13,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public AuthController(IAuthService authService, IUserService userService)
+    public AuthController(IAuthService authService, IUserService userService, IStringLocalizer<SharedResource> localizer)
     {
         _authService = authService;
         _userService = userService;
+        _localizer = localizer;
     }
 
     [HttpPost("login")]
@@ -28,7 +32,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -42,7 +46,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -52,11 +56,11 @@ public class AuthController : ControllerBase
         try
         {
             await _authService.LogoutAsync(request, cancellationToken);
-            return Ok(new { message = "Logged out successfully" });
+            return Ok(new { message = _localizer["OperationSuccess"] ?? "Operation completed successfully" });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 
@@ -78,14 +82,14 @@ public class AuthController : ControllerBase
 
                 if (string.IsNullOrEmpty(username))
                 {
-                    return Unauthorized(new { message = "User ID or username not found in token" });
+                    return Unauthorized(new { message = _localizer["Unauthorized"] });
                 }
 
                 // Get user by username to get their ID
                 var user = await _userService.GetUserByUsernameAsync(username, cancellationToken);
                 if (user == null)
                 {
-                    return NotFound(new { message = $"User with username '{username}' not found" });
+                    return NotFound(new { message = _localizer["UserNotFound"] });
                 }
 
                 userId = user.Id;
@@ -95,14 +99,14 @@ public class AuthController : ControllerBase
             
             if (userInfo == null)
             {
-                return NotFound(new { message = "User not found" });
+                return NotFound(new { message = _localizer["UserNotFound"] });
             }
 
             return Ok(userInfo);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
 }

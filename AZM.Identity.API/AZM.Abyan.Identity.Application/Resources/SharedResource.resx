@@ -129,4 +129,148 @@
   <data name="ClientUpdateSuccessfully" xml:space="preserve">
     <value>Client Update Successfully</value>
   </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>User not found</value>
+  </data>
+  <data name="UserCreatedSuccessfully" xml:space="preserve">
+    <value>User created successfully</value>
+  </data>
+  <data name="UserUpdatedSuccessfully" xml:space="preserve">
+    <value>User updated successfully</value>
+  </data>
+  <data name="UserDeletedSuccessfully" xml:space="preserve">
+    <value>User deleted successfully</value>
+  </data>
+  <data name="InvalidUserId" xml:space="preserve">
+    <value>Invalid user ID format</value>
+  </data>
+  <data name="FailedToCreateUserInKeycloak" xml:space="preserve">
+    <value>Failed to create user in Keycloak</value>
+  </data>
+  <data name="TenantNotFound" xml:space="preserve">
+    <value>Tenant/Realm not found</value>
+  </data>
+  <data name="ScopeNotFound" xml:space="preserve">
+    <value>Scope not found</value>
+  </data>
+  <data name="ScopeCreatedSuccessfully" xml:space="preserve">
+    <value>Scope created successfully</value>
+  </data>
+  <data name="ScopeUpdatedSuccessfully" xml:space="preserve">
+    <value>Scope updated successfully</value>
+  </data>
+  <data name="ScopeDeletedSuccessfully" xml:space="preserve">
+    <value>Scope deleted successfully</value>
+  </data>
+  <data name="FailedToCreateScopeInKeycloak" xml:space="preserve">
+    <value>Failed to create scope in Keycloak</value>
+  </data>
+  <data name="RoleNotFound" xml:space="preserve">
+    <value>Role not found</value>
+  </data>
+  <data name="RoleCreatedSuccessfully" xml:space="preserve">
+    <value>Role created successfully</value>
+  </data>
+  <data name="RoleUpdatedSuccessfully" xml:space="preserve">
+    <value>Role updated successfully</value>
+  </data>
+  <data name="RoleDeletedSuccessfully" xml:space="preserve">
+    <value>Role deleted successfully</value>
+  </data>
+  <data name="FailedToGetRoleIdFromKeycloak" xml:space="preserve">
+    <value>Failed to get role ID from Keycloak</value>
+  </data>
+  <data name="RoleAssignedSuccessfully" xml:space="preserve">
+    <value>Role assigned successfully</value>
+  </data>
+  <data name="RoleRemovedSuccessfully" xml:space="preserve">
+    <value>Role removed successfully</value>
+  </data>
+  <data name="RoleAssignmentNotFound" xml:space="preserve">
+    <value>Role assignment not found</value>
+  </data>
+  <data name="InvalidClientId" xml:space="preserve">
+    <value>Invalid client ID format</value>
+  </data>
+  <data name="InvalidScopeId" xml:space="preserve">
+    <value>Invalid scope ID format</value>
+  </data>
+  <data name="InvalidPolicyId" xml:space="preserve">
+    <value>Invalid policy ID format</value>
+  </data>
+  <data name="InvalidPermissionId" xml:space="preserve">
+    <value>Invalid permission ID format</value>
+  </data>
+  <data name="InvalidResourceId" xml:space="preserve">
+    <value>Invalid resource ID format</value>
+  </data>
+  <data name="OperationSuccess" xml:space="preserve">
+    <value>Operation completed successfully</value>
+  </data>
+  <data name="RoleAlreadyAssigned" xml:space="preserve">
+    <value>Role is already assigned to this user</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Resource not found</value>
+  </data>
+  <data name="ResourceCreatedSuccessfully" xml:space="preserve">
+    <value>Resource created successfully</value>
+  </data>
+  <data name="ResourceUpdatedSuccessfully" xml:space="preserve">
+    <value>Resource updated successfully</value>
+  </data>
+  <data name="ResourceDeletedSuccessfully" xml:space="preserve">
+    <value>Resource deleted successfully</value>
+  </data>
+  <data name="FailedToCreateResourceInKeycloak" xml:space="preserve">
+    <value>Failed to create resource in Keycloak</value>
+  </data>
+  <data name="PolicyNotFound" xml:space="preserve">
+    <value>Policy not found</value>
+  </data>
+  <data name="PolicyCreatedSuccessfully" xml:space="preserve">
+    <value>Policy created successfully</value>
+  </data>
+  <data name="PolicyUpdatedSuccessfully" xml:space="preserve">
+    <value>Policy updated successfully</value>
+  </data>
+  <data name="PolicyDeletedSuccessfully" xml:space="preserve">
+    <value>Policy deleted successfully</value>
+  </data>
+  <data name="FailedToCreatePolicyInKeycloak" xml:space="preserve">
+    <value>Failed to create policy in Keycloak</value>
+  </data>
+  <data name="PermissionNotFound" xml:space="preserve">
+    <value>Permission not found</value>
+  </data>
+  <data name="PermissionCreatedSuccessfully" xml:space="preserve">
+    <value>Permission created successfully</value>
+  </data>
+  <data name="PermissionUpdatedSuccessfully" xml:space="preserve">
+    <value>Permission updated successfully</value>
+  </data>
+  <data name="PermissionDeletedSuccessfully" xml:space="preserve">
+    <value>Permission deleted successfully</value>
+  </data>
+  <data name="FailedToCreatePermissionInKeycloak" xml:space="preserve">
+    <value>Failed to create permission in Keycloak or retrieve its ID</value>
+  </data>
+  <data name="FormNotFound" xml:space="preserve">
+    <value>Form not found</value>
+  </data>
+  <data name="FormRetrievedSuccessfully" xml:space="preserve">
+    <value>Form retrieved successfully</value>
+  </data>
+  <data name="OperationFailed" xml:space="preserve">
+    <value>Operation failed</value>
+  </data>
+  <data name="ValidationFailed" xml:space="preserve">
+    <value>Validation failed</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>Unauthorized</value>
+  </data>
+  <data name="ResourceConflict" xml:space="preserve">
+    <value>Resource conflict</value>
+  </data>
 </root>

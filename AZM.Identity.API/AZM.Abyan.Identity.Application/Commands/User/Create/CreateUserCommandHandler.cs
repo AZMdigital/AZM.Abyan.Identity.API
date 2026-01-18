@@ -25,16 +25,18 @@ public class CreateUserCommandHandler(
     {
         try
         {
-            // Resolve TenantId from RealmName if provided
+            // Resolve RealmId from RealmName if provided
+            Guid? realmId = null;
             Guid? tenantId = null;
             if (!string.IsNullOrWhiteSpace(request.RealmName))
             {
-                var resolvedTenantId = await _realmResolverService.ResolveRealmIdAsync(request.RealmName, cancellationToken);
-                if (!resolvedTenantId.HasValue)
+                var resolvedRealmId = await _realmResolverService.ResolveRealmIdAsync(request.RealmName, cancellationToken);
+                if (!resolvedRealmId.HasValue)
                 {
                     return Result<Guid>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.RealmName}' not found");
                 }
-                tenantId = resolvedTenantId.Value;
+                realmId = resolvedRealmId.Value;
+                tenantId = resolvedRealmId.Value; // Keep TenantId for backward compatibility
             }
 
             // Get admin token
@@ -50,8 +52,8 @@ public class CreateUserCommandHandler(
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 Password = request.Password,
-                Enabled = request.Enabled,
-                EmailVerified = request.EmailVerified
+                Enabled = true,
+                EmailVerified =true
             };
 
             var keycloakUserIdString = await _keycloakService.CreateUserAsync(createUserRequest, adminToken, cancellationToken);
@@ -69,7 +71,8 @@ public class CreateUserCommandHandler(
                 Email = request.Email,
                 Firstname = request.FirstName,
                 Lastname = request.LastName,
-                TenantId = tenantId,
+                TenantId = tenantId, // Keep for backward compatibility
+               // RealmId = realmId, // Add RealmId similar to Client
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Guid.Empty
             };

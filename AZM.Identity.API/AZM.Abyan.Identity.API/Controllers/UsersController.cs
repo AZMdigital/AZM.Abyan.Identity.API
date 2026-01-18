@@ -1,4 +1,6 @@
 using AZM.Abyan.Identity.Application.Commands.User.Create;
+using AZM.Abyan.Identity.Application.Commands.User.Delete;
+using AZM.Abyan.Identity.Application.Commands.User.Update;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
@@ -33,8 +35,7 @@ public class UsersController : ControllerBase
             command.Password = request.Password;
             command.Enabled = request.Enabled;
             command.EmailVerified = request.EmailVerified;
-            // Note: TenantId and Realm should be provided in the request or resolved from context
-            // For now, leaving them optional/nullable as they might come from different sources
+            command.RealmName = request.RealmName; // Set RealmName from request
             
             var result = await _mediator.Send(command);
             return StatusCode(result.StatusCode, result);
@@ -50,8 +51,9 @@ public class UsersController : ControllerBase
     {
         try
         {
-            await _userService.UpdateUserAsync(id, request, cancellationToken);
-            return Ok(new { message = $"User {id} updated successfully" });
+            request.UserId = id;
+            var result = await _mediator.Send(new UpdateUserCommand(request));
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -64,8 +66,12 @@ public class UsersController : ControllerBase
     {
         try
         {
-            await _userService.DeleteUserAsync(id, cancellationToken);
-            return Ok(new { message = $"User {id} deleted successfully" });
+            if (!Guid.TryParse(id, out var userId))
+            {
+                return BadRequest(new { message = "Invalid user ID format" });
+            }
+            var result = await _mediator.Send(new DeleteUserCommand(userId));
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -104,50 +110,50 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpPut("{id}/enable")]
-    public async Task<ActionResult> EnableUser(string id, [FromBody] bool enabled, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _userService.EnableUserAsync(id, enabled, cancellationToken);
-            return Ok(new { message = $"User {(enabled ? "enabled" : "disabled")} successfully" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    //[HttpPut("{id}/enable")]
+    //public async Task<ActionResult> EnableUser(string id, [FromBody] bool enabled, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _userService.EnableUserAsync(id, enabled, cancellationToken);
+    //        return Ok(new { message = $"User {(enabled ? "enabled" : "disabled")} successfully" });
+    //    }
+    //    catch (KeyNotFoundException ex)
+    //    {
+    //        return NotFound(new { message = ex.Message });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = ex.Message });
+    //    }
+    //}
 
-    [HttpPut("{id}/reset-password")]
-    public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
-            return Ok(new { message = $"Password for user {id} reset successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    //[HttpPut("{id}/reset-password")]
+    //public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
+    //        return Ok(new { message = $"Password for user {id} reset successfully" });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = ex.Message });
+    //    }
+    //}
 
-    [HttpPut("{id}/send-verify-email")]
-    public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _userService.SendVerifyEmailAsync(id, cancellationToken);
-            return Ok(new { message = $"Verification email sent to user {id} successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+    //[HttpPut("{id}/send-verify-email")]
+    //public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _userService.SendVerifyEmailAsync(id, cancellationToken);
+    //        return Ok(new { message = $"Verification email sent to user {id} successfully" });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = ex.Message });
+    //    }
+    //}
 }
 

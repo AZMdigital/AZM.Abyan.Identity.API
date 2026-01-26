@@ -73,21 +73,18 @@ public class PermissionDto
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 
-    [JsonPropertyName("type")]
-    public required string Type { get; set; } // "scope" for Scope-based Permission
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
 
-    [JsonPropertyName("logic")]
-    public string Logic { get; set; } = "POSITIVE";
+    // Role-based permission model
+    // Permission is a role in Keycloak with custom attributes
+    [JsonPropertyName("controller")]
+    public string? Controller { get; set; } // From role attributes - mandatory
 
-    [JsonPropertyName("decisionStrategy")]
-    public string DecisionStrategy { get; set; } = "UNANIMOUS";
+    [JsonPropertyName("action")]
+    public string? Action { get; set; } // From role attributes - optional
     
-    [JsonPropertyName("resources")]
-    public List<string> Resources { get; set; } = new(); // Resource Names or IDs
-    
-    [JsonPropertyName("scopes")]
-    public List<string> Scopes { get; set; } = new();
-
-    [JsonPropertyName("policies")]
-    public List<string> Policies { get; set; } = new();
+    // Role attributes in Keycloak are stored as Dictionary<string, string[]>
+    [JsonPropertyName("attributes")]
+    public Dictionary<string, string[]>? Attributes { get; set; }
 }

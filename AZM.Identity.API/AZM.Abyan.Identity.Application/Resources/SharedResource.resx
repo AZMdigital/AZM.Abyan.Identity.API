@@ -273,4 +273,13 @@
   <data name="ResourceConflict" xml:space="preserve">
     <value>Resource conflict</value>
   </data>
+  <data name="Error_InvalidRequest" xml:space="preserve">
+    <value>Invalid request.</value>
+  </data>
+  <data name="Error_NotFound" xml:space="preserve">
+    <value>Resource not found.</value>
+  </data>
+  <data name="Success_OperationCompleted" xml:space="preserve">
+    <value>Operation completed successfully.</value>
+  </data>
 </root>

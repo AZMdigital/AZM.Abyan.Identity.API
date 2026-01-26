@@ -1,3 +1,4 @@
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
@@ -109,6 +110,24 @@ public class UserService : IUserService
             RealmRoles = realmRoles,
             ClientRoles = clientRoles
         };
+    }
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            return false;
+        }
+
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        var user = await _keycloakService.GetUserByUsernameAsync(request.Username, adminToken, cancellationToken);
+
+        if (user == null)
+        {
+            return false;
+        }
+
+        await _keycloakService.SendResetPasswordEmailAsync(user.Id, adminToken, cancellationToken);
+        return true;
     }
 }
 

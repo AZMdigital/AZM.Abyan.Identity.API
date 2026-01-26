@@ -1,4 +1,4 @@
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
+using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -11,24 +11,15 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
 {
     private readonly IKeycloakService _keycloakService;
     private readonly IRepository<Permission, Guid> _permissionRepository;
-    private readonly IRepository<Scope, Guid> _scopeRepository;
-    private readonly IRepository<Resource, Guid> _resourceRepository;
-    private readonly IRepository<Policy, Guid> _policyRepository;
     private readonly IdentityDbContext _dbContext;
 
     public PermissionKeycloakSyncService(
         IKeycloakService keycloakService,
         IRepository<Permission, Guid> permissionRepository,
-        IRepository<Scope, Guid> scopeRepository,
-        IRepository<Resource, Guid> resourceRepository,
-        IRepository<Policy, Guid> policyRepository,
         IdentityDbContext dbContext)
     {
         _keycloakService = keycloakService;
         _permissionRepository = permissionRepository;
-        _scopeRepository = scopeRepository;
-        _resourceRepository = resourceRepository;
-        _policyRepository = policyRepository;
         _dbContext = dbContext;
     }
 
@@ -38,67 +29,65 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
 
         try
         {
-            // Get all permissions from Keycloak
-            List<AZM.Abyan.Identity.Application.DTOs.AuthZ.PermissionDto> keycloakPermissions;
+            // Get all roles from Keycloak (permissions are now roles)
+            List<ClientRoleResponse> keycloakRoles;
             try
             {
-                keycloakPermissions = await _keycloakService.GetAllPermissionsAsync(realm, clientId, adminToken, cancellationToken);
+                keycloakRoles = await _keycloakService.GetClientRolesAsync(realm, clientId, adminToken, cancellationToken);
             }
             catch (HttpRequestException ex) when (ex.Message.Contains("404") || ex.Message.Contains("Not Found"))
             {
-                // Client doesn't support permissions or Authorization Services not enabled - skip silently
+                // Client doesn't support roles - skip silently
                 return result;
             }
 
             // Get all permissions from local database
             var localPermissions = await _permissionRepository.GetWhere().ToListAsync(cancellationToken);
 
-            // Get all related entities
-            var allScopes = await _scopeRepository.GetWhere().ToListAsync(cancellationToken);
-            var allResources = await _resourceRepository.GetWhere().ToListAsync(cancellationToken);
-            var allPolicies = await _policyRepository.GetWhere().ToListAsync(cancellationToken);
-
-            // Process each Keycloak permission (only scope permissions)
-            foreach (var keycloakPermission in keycloakPermissions.Where(p => p.Type == "scope"))
+            // Process each Keycloak role (permission)
+            foreach (var keycloakRole in keycloakRoles)
             {
-                if (string.IsNullOrEmpty(keycloakPermission.Id) || !Guid.TryParse(keycloakPermission.Id, out var keycloakPermissionId))
+                if (string.IsNullOrEmpty(keycloakRole.Id) || !Guid.TryParse(keycloakRole.Id, out var keycloakRoleId))
                 {
-                    result.Errors.Add($"Permission '{keycloakPermission.Name}' has invalid or missing ID, skipping");
+                    result.Errors.Add($"Role '{keycloakRole.Name}' has invalid or missing ID, skipping");
                     continue;
                 }
 
-                var localPermission = localPermissions.FirstOrDefault(p => p.Id == keycloakPermissionId);
+                // Extract Controller and Action from role attributes
+                string? controller = null;
+                string? action = null;
 
-                // Find scope (use first scope from permission)
-                var scopeName = keycloakPermission.Scopes?.FirstOrDefault();
-                var scope = scopeName != null ? allScopes.FirstOrDefault(s => s.Name == scopeName) : null;
-
-                // Find resource (use first resource from permission)
-                var resourceName = keycloakPermission.Resources?.FirstOrDefault();
-                var resource = resourceName != null ? allResources.FirstOrDefault(r => r.Name == resourceName) : null;
-
-                // Find policy (use first policy from permission)
-                var policyName = keycloakPermission.Policies?.FirstOrDefault();
-                var policy = policyName != null ? allPolicies.FirstOrDefault(p => p.Name == policyName) : null;
-
-                // Skip if required entities are missing
-                if (scope == null || resource == null || policy == null)
+                if (keycloakRole.Attributes != null)
                 {
-                    result.Errors.Add($"Permission '{keycloakPermission.Name}' is missing required entities (scope, resource, or policy), skipping");
-                    continue;
+                    if (keycloakRole.Attributes.TryGetValue("Controller", out var controllerValues) && controllerValues != null && controllerValues.Length > 0)
+                    {
+                        controller = controllerValues[0];
+                    }
+
+                    if (keycloakRole.Attributes.TryGetValue("Action", out var actionValues) && actionValues != null && actionValues.Length > 0)
+                    {
+                        action = actionValues[0];
+                    }
                 }
+
+                // Only sync roles that have Controller attribute (these are permissions)
+                if (string.IsNullOrEmpty(controller))
+                {
+                    continue; // Skip roles that don't have Controller attribute (not permissions)
+                }
+
+                var localPermission = localPermissions.FirstOrDefault(p => p.Id == keycloakRoleId);
 
                 if (localPermission == null)
                 {
                     // Create new permission
                     localPermission = new Permission
                     {
-                        Id = keycloakPermissionId,
-                        Name = keycloakPermission.Name,
-                        Description = keycloakPermission.Name,
-                        ScopeId = scope.Id,
-                        ResourceId = resource.Id,
-                        PolicyId = policy.Id,
+                        Id = keycloakRoleId,
+                        Name = keycloakRole.Name,
+                        Description = keycloakRole.Description ?? string.Empty,
+                        Controller = controller,
+                        Action = action,
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = Guid.Empty
                     };
@@ -108,10 +97,10 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
                 else
                 {
                     // Update existing permission
-                    localPermission.Name = keycloakPermission.Name;
-                    localPermission.ScopeId = scope.Id;
-                    localPermission.ResourceId = resource.Id;
-                    localPermission.PolicyId = policy.Id;
+                    localPermission.Name = keycloakRole.Name;
+                    localPermission.Description = keycloakRole.Description ?? string.Empty;
+                    localPermission.Controller = controller;
+                    localPermission.Action = action;
                     localPermission.UpdatedAt = DateTime.UtcNow;
                     localPermission.UpdatedBy = Guid.Empty;
                     _permissionRepository.Update(localPermission);
@@ -120,12 +109,12 @@ public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
             }
 
             // Delete permissions that don't exist in Keycloak
-            var keycloakPermissionIds = keycloakPermissions
-                .Where(p => !string.IsNullOrEmpty(p.Id) && Guid.TryParse(p.Id, out _))
-                .Select(p => Guid.Parse(p.Id!))
+            var keycloakRoleIds = keycloakRoles
+                .Where(r => !string.IsNullOrEmpty(r.Id) && Guid.TryParse(r.Id, out _))
+                .Select(r => Guid.Parse(r.Id))
                 .ToHashSet();
             var permissionsToDelete = localPermissions
-                .Where(p => !keycloakPermissionIds.Contains(p.Id))
+                .Where(p => !keycloakRoleIds.Contains(p.Id))
                 .ToList();
 
             foreach (var permissionToDelete in permissionsToDelete)

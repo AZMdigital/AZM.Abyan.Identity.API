@@ -1,9 +1,11 @@
 using AZM.Abyan.Identity.Application.DTOs.Realms;
+using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using AZM.Abyan.Identity.Persistence.DbContexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
@@ -12,15 +14,18 @@ public class TenantSyncService : ITenantSyncService
     private readonly IKeycloakService _keycloakService;
     private readonly IRepository<Tenant, Guid> _tenantRepository;
     private readonly IdentityDbContext _dbContext;
+    private readonly KeycloakConfigurations _keycloakConfigurations;
 
     public TenantSyncService(
         IKeycloakService keycloakService,
         IRepository<Tenant, Guid> tenantRepository,
-        IdentityDbContext dbContext)
+        IdentityDbContext dbContext,
+        IOptions<KeycloakConfigurations> keycloakConfigurations)
     {
         _keycloakService = keycloakService;
         _tenantRepository = tenantRepository;
         _dbContext = dbContext;
+        _keycloakConfigurations = keycloakConfigurations.Value;
     }
 
     public async Task<SyncEntityResult> SyncTenantsAsync(string adminToken, CancellationToken cancellationToken = default)
@@ -30,7 +35,13 @@ public class TenantSyncService : ITenantSyncService
         try
         {
             // Get all realms from Keycloak
-            var keycloakRealms = await _keycloakService.GetAllRealmsAsync(adminToken, cancellationToken);
+            var allKeycloakRealms = await _keycloakService.GetAllRealmsAsync(adminToken, cancellationToken);
+
+            // Filter to only configured tenants (skip "master" and other non-configured realms)
+            var configuredTenantNames = _keycloakConfigurations.Tenants.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var keycloakRealms = allKeycloakRealms
+                .Where(r => configuredTenantNames.Contains(r.Realm))
+                .ToList();
 
             // Get all tenants from local database
             var localTenants = await _tenantRepository.GetWhere().ToListAsync(cancellationToken);
@@ -38,7 +49,7 @@ public class TenantSyncService : ITenantSyncService
             // Create a dictionary of Keycloak realms by realm name
             var keycloakRealmsDict = keycloakRealms.ToDictionary(r => r.Realm, r => r);
 
-            // Process each Keycloak realm
+            // Process each configured Keycloak realm
             foreach (var keycloakRealm in keycloakRealms)
             {
                 if (!Guid.TryParse(keycloakRealm.Id, out var keycloakRealmId))
@@ -79,13 +90,13 @@ public class TenantSyncService : ITenantSyncService
                 }
             }
 
-            // Delete tenants that don't exist in Keycloak
+            // Delete tenants that don't exist in Keycloak (only for configured tenants)
             var keycloakRealmIds = keycloakRealms
                 .Where(r => Guid.TryParse(r.Id, out _))
                 .Select(r => Guid.Parse(r.Id))
                 .ToHashSet();
             var tenantsToDelete = localTenants
-                .Where(t => !keycloakRealmIds.Contains(t.Id))
+                .Where(t => configuredTenantNames.Contains(t.Name) && !keycloakRealmIds.Contains(t.Id))
                 .ToList();
 
             foreach (var tenantToDelete in tenantsToDelete)

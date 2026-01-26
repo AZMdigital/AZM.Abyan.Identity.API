@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -434,7 +435,8 @@ public class KeycloakService : IKeycloakService
         var role = new
         {
             name = request.Name,
-            description = request.Description
+            description = request.Description,
+            attributes = request.Attributes ?? new Dictionary<string, string[]>()
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(role);
@@ -447,6 +449,19 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        
+        // DEBUG: Capture response details as JSON string for debugging
+        var debugResponseJson = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            StatusCode = (int)response.StatusCode,
+            ReasonPhrase = response.ReasonPhrase,
+            Headers = response.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value)),
+            Content = await response.Content.ReadAsStringAsync(cancellationToken),
+            RequestUri = response.RequestMessage?.RequestUri?.ToString(),
+            RequestMethod = response.RequestMessage?.Method?.ToString()
+        });
+        var debugResponseForInspector = debugResponseJson; // Variable for debugger inspection
+        
         response.EnsureSuccessStatusCode();
     }
 
@@ -457,7 +472,8 @@ public class KeycloakService : IKeycloakService
         var role = new
         {
             name = request.Name,
-            description = request.Description
+            description = request.Description,
+            attributes = request.Attributes ?? new Dictionary<string, string[]>()
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(role);

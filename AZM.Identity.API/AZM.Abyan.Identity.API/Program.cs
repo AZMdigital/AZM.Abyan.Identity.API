@@ -120,6 +120,11 @@ builder.Services.AddAuthentication(options =>
 // Keycloak configuration - using KeycloakFormbuilder as default application config
 builder.Services.Configure<KeycloakConfiguration>(
     builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
+
+// KeycloakConfigurations binding - binds the entire KeycloakConfigurations section
+builder.Services.Configure<KeycloakConfigurations>(
+    builder.Configuration.GetSection("KeycloakConfigurations"));
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache(options =>
@@ -153,9 +158,6 @@ builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, I
 builder.Services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
 
@@ -164,9 +166,6 @@ builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();
 builder.Services.AddScoped<IUserSyncService, UserSyncService>();
 builder.Services.AddScoped<IClientSyncService, ClientSyncService>();
 builder.Services.AddScoped<IRoleSyncService, RoleSyncService>();
-builder.Services.AddScoped<IScopeSyncService, ScopeSyncService>();
-builder.Services.AddScoped<IResourceSyncService, ResourceSyncService>();
-builder.Services.AddScoped<IPolicySyncService, PolicySyncService>();
 builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
 builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
 builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();

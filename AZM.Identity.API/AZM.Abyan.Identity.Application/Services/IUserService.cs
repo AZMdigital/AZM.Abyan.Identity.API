@@ -1,3 +1,4 @@
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 
 namespace AZM.Abyan.Identity.Application.Services;
@@ -14,5 +15,7 @@ public interface IUserService
     Task SendVerifyEmailAsync(string userId, CancellationToken cancellationToken = default);
     Task<UserResponse?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default);
     Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default);
+    Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
+
 }
 

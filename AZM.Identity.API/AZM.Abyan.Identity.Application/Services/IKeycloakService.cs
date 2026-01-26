@@ -24,6 +24,7 @@ public interface IKeycloakService
     Task<UserResponse?> GetUserByIdAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task EnableUserAsync(string userId, bool enabled, string adminToken, CancellationToken cancellationToken = default);
     Task ResetUserPasswordAsync(string userId, ResetPasswordRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task SendResetPasswordEmailAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task SendVerifyEmailAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task<UserResponse?> GetUserByUsernameAsync(string username, string adminToken, CancellationToken cancellationToken = default);
     Task<List<RealmRoleResponse>> GetUserRealmRolesAsync(string userId, string adminToken, CancellationToken cancellationToken = default);

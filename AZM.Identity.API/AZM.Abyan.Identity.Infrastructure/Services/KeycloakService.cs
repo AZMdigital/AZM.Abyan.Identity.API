@@ -788,10 +788,29 @@ public class KeycloakService : IKeycloakService
         {
             type = "password",
             value = request.NewPassword,
-            temporary = request.Temporary
+            //  temporary = request.Temporary
+            temporary=false
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpoint)
+        {
+            Content = content
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task SendResetPasswordEmailAsync(string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/execute-actions-email";
+
+        var actions = new List<string> { "UPDATE_PASSWORD" };
+        var json = System.Text.Json.JsonSerializer.Serialize(actions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Put, endpoint)

@@ -4,8 +4,9 @@ public class CreatePermissionRequest
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public Guid ScopeId { get; set; }
-    public Guid ResourceId { get; set; }
-    public Guid PolicyId { get; set; }
+    
+    // Role-based permission model
+    public required string Controller { get; set; } // Mandatory: Controller name
+    public string? Action { get; set; } // Optional: Action name
 }
 

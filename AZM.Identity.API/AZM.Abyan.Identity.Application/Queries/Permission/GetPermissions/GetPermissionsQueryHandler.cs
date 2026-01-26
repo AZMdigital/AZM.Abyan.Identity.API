@@ -7,37 +7,23 @@ using Microsoft.EntityFrameworkCore;
 namespace AZM.Abyan.Identity.Application.Queries.Permission.GetPermissions;
 
 public class GetPermissionsQueryHandler(
-    IRepository<Domain.Entities.Permission, Guid> permissionRepository,
-    IRepository<Domain.Entities.Scope, Guid> scopeRepository,
-    IRepository<Domain.Entities.Resource, Guid> resourceRepository,
-    IRepository<Domain.Entities.Policy, Guid> policyRepository) : IRequestHandler<GetPermissionsQuery, Result<List<PermissionResponse>>>
+    IRepository<Domain.Entities.Permission, Guid> permissionRepository) : IRequestHandler<GetPermissionsQuery, Result<List<PermissionResponse>>>
 {
     private readonly IRepository<Domain.Entities.Permission, Guid> _permissionRepository = permissionRepository;
-    private readonly IRepository<Domain.Entities.Scope, Guid> _scopeRepository = scopeRepository;
-    private readonly IRepository<Domain.Entities.Resource, Guid> _resourceRepository = resourceRepository;
-    private readonly IRepository<Domain.Entities.Policy, Guid> _policyRepository = policyRepository;
 
     public async Task<Result<List<PermissionResponse>>> Handle(GetPermissionsQuery request, CancellationToken cancellationToken)
     {
         var query = _permissionRepository.GetWhere(p => !p.IsDeleted);
 
-        var permissions = await query
-            .Include(p => p.Scope)
-            .Include(p => p.Resources)
-            .Include(p => p.Policy)
-            .ToListAsync(cancellationToken);
+        var permissions = await query.ToListAsync(cancellationToken);
 
         var response = permissions.Select(p => new PermissionResponse
         {
             Id = p.Id,
             Name = p.Name,
             Description = p.Description,
-            ScopeId = p.ScopeId,
-            ScopeName = p.Scope?.Name ?? string.Empty,
-            ResourceId = p.ResourceId,
-            ResourceName = p.Resources?.Name ?? string.Empty,
-            PolicyId = p.PolicyId,
-            PolicyName = p.Policy?.Name ?? string.Empty,
+            Controller = p.Controller,
+            Action = p.Action,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt
         }).ToList();

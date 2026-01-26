@@ -18,9 +18,6 @@ public class GetPermissionByIdQueryHandler(
     public async Task<Result<PermissionResponse>> Handle(GetPermissionByIdQuery request, CancellationToken cancellationToken)
     {
         var permission = await _permissionRepository.GetWhere(p => p.Id == request.PermissionId && !p.IsDeleted)
-            .Include(p => p.Scope)
-            .Include(p => p.Resources)
-            .Include(p => p.Policy)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (permission == null)
@@ -33,12 +30,8 @@ public class GetPermissionByIdQueryHandler(
             Id = permission.Id,
             Name = permission.Name,
             Description = permission.Description,
-            ScopeId = permission.ScopeId,
-            ScopeName = permission.Scope?.Name ?? string.Empty,
-            ResourceId = permission.ResourceId,
-            ResourceName = permission.Resources?.Name ?? string.Empty,
-            PolicyId = permission.PolicyId,
-            PolicyName = permission.Policy?.Name ?? string.Empty,
+            Controller = permission.Controller,
+            Action = permission.Action,
             CreatedAt = permission.CreatedAt,
             UpdatedAt = permission.UpdatedAt
         };

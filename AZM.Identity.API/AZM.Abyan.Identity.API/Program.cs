@@ -160,6 +160,7 @@ builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, I
 builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
 builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
+builder.Services.AddScoped<IRepository<TenantUserPermission, Guid>, Repository<TenantUserPermission, Guid, IdentityDbContext>>();
 
 // Sync Services
 builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();

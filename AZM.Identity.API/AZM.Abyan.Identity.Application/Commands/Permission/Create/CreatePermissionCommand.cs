@@ -15,6 +15,6 @@ public class CreatePermissionCommand : BaseEntity, IRequest<Result<Guid>>
     
     public Guid ClientId { get; set; } // Local client ID (Guid, same as Keycloak ID)
     public string RealmName { get; set; } = string.Empty;
-    public string KeycloakClientId { get; set; } = string.Empty; // Keycloak client ID (string)
+   // public string KeycloakClientId { get; set; } = string.Empty; // Keycloak client ID (string)
 }
 

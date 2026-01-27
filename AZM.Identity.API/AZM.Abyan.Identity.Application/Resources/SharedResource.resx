@@ -282,4 +282,16 @@
   <data name="Success_OperationCompleted" xml:space="preserve">
     <value>Operation completed successfully.</value>
   </data>
+  <data name="PermissionsAlreadyAssigned" xml:space="preserve">
+    <value>Permissions is already assigned to this user</value>
+  </data>
+  <data name="PermissionAssignedSuccessfully" xml:space="preserve">
+    <value>Permission assigned successfully</value>
+  </data>
+  <data name="PermissionAssignmentNotFound" xml:space="preserve">
+    <value>Permission assignment not found</value>
+  </data>
+  <data name="PermissionRemovedSuccessfully" xml:space="preserve">
+    <value>Permission Removed Successfully</value>
+  </data>
 </root>

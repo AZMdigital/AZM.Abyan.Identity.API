@@ -44,7 +44,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("clients/{clientId}")]
-    public async Task<ActionResult> CreateClientRole(string realm, string clientId, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> CreateClientRole(string realm, Guid clientId, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -53,7 +53,7 @@ public class RolesController : ControllerBase
             command.Name = request.Name;
             command.Description = request.Description;
             command.Realm = realm;
-            command.KeycloakClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
+            command.ClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
             
             var result = await _mediator.Send(command);
             var response = StatusCode(result.StatusCode, result);

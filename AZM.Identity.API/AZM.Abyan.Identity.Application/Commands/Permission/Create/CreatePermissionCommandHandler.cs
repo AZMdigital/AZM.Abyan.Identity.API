@@ -30,17 +30,17 @@ public class CreatePermissionCommandHandler(
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
             // Resolve client internal ID from configuration
-            var clientInternalId = ResolveClientInternalId(request.RealmName, request.KeycloakClientId);
-            if (string.IsNullOrEmpty(clientInternalId))
-            {
-                return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.RealmName}'");
-            }
+            //var clientInternalId = ResolveClientInternalId(request.RealmName, request.KeycloakClientId);
+            //if (string.IsNullOrEmpty(clientInternalId))
+            //{
+            //    return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.RealmName}'");
+            //}
 
             // Parse ClientInternalId to Guid for local ClientId
-            if (!Guid.TryParse(clientInternalId, out var clientIdGuid))
-            {
-                return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
-            }
+            //if (!Guid.TryParse(request.ClientId, out var clientIdGuid))
+            //{
+            //    return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
+            //}
 
             // Prepare role attributes for Keycloak
             // Controller is mandatory, Action is optional
@@ -64,13 +64,13 @@ public class CreatePermissionCommandHandler(
 
             await _keycloakService.CreateClientRoleAsync(
                 request.RealmName,
-                clientInternalId,
+                request.ClientId.ToString(),
                 createRoleRequest,
                 adminToken,
                 cancellationToken);
 
             // Get the created role from Keycloak to get its ID
-            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.RealmName, clientInternalId, adminToken, cancellationToken);
+            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.RealmName, request.ClientId.ToString(), adminToken, cancellationToken);
             var createdRole = keycloakRoles.FirstOrDefault(r => r.Name == request.Name);
 
             if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))

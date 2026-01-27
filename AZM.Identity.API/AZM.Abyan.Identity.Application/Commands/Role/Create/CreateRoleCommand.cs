@@ -10,6 +10,6 @@ public class CreateRoleCommand : BaseEntity, IRequest<Result<Guid>>
     public string Description { get; set; } = string.Empty;
     public Guid ClientId { get; set; }
     public string Realm { get; set; } = string.Empty;
-    public string KeycloakClientId { get; set; } = string.Empty; // Keycloak client ID (string)
+  //  public Guid KeycloakClientId { get; set; } = string.Empty; // Keycloak client ID (string)
 }
 

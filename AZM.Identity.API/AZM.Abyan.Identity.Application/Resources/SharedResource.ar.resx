@@ -282,4 +282,16 @@
   <data name="Success_OperationCompleted" xml:space="preserve">
     <value>تمت العملية بنجاح.</value>
   </data>
+  <data name="PermissionsAlreadyAssigned" xml:space="preserve">
+    <value>الصلاحية مُعيّن بالفعل لهذا المستخدم</value>
+  </data>
+  <data name="PermissionAssignedSuccessfully" xml:space="preserve">
+    <value>تم تعيين الدور بنجاح</value>
+  </data>
+  <data name="PermissionAssignmentNotFound" xml:space="preserve">
+    <value>تعيين الصلاحية غير موجود</value>
+  </data>
+  <data name="PermissionRemovedSuccessfully" xml:space="preserve">
+    <value>تم الصلاحية الدور بنجاح</value>
+  </data>
 </root>

@@ -74,29 +74,39 @@ public class UserService : IUserService
     public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default)
     {
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        
+
         // Get user info
         var user = await _keycloakService.GetUserByIdAsync(userId, adminToken, cancellationToken);
-        if (user == null)
-            return null;
+        if (user == null) return null;
 
-        // Get realm roles
-        var realmRoles = await _keycloakService.GetUserRealmRolesAsync(userId, adminToken, cancellationToken);
+        // Get all role mappings (realm + client)
+        var mappings = await _keycloakService.GetUserRoleMappingsAsync(userId, adminToken, cancellationToken);
 
-        // Get all clients and their roles for the user
-        var realm = _keycloakConfig.Realm;
-        var clients = await _keycloakService.GetClientsAsync(realm, adminToken, cancellationToken);
+        // Realm roles
+        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse{
+                         Id = r.Id,
+                         Name = r.Name,
+                         Description = r.Description,
+                         Composite = r.Composite,
+                         ContainerId = r.ContainerId}).ToList()
+                         ?? new List<RealmRoleResponse>();
+        // Client roles
         var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
-
-        foreach (var client in clients)
+        if (mappings.ClientMappings != null)
         {
-            var roles = await _keycloakService.GetUserClientRolesAsync(userId, client.Id.ToString(), adminToken, cancellationToken);
-            if (roles.Any())
+            foreach (var kvp in mappings.ClientMappings)
             {
-                clientRoles[client.ClientId] = roles;
+                clientRoles[kvp.Key] = kvp.Value.Mappings;
+
+                // Optional: get attributes if needed
+                foreach (var role in kvp.Value.Mappings)
+                {
+                    role.Attributes = await _keycloakService.GetClientRoleAttributesAsync(
+                        kvp.Value.Id, role.Name, adminToken, cancellationToken);
+                }
             }
         }
-
+        // Return full user info
         return new UserInfoResponse
         {
             Id = user.Id,

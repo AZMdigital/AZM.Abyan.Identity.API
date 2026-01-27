@@ -23,6 +23,7 @@ public class IdentityDbContext : DbContext
     public DbSet<TenantUserRole> TenantUserRoles { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<Client> Clients { get; set; }
+    public DbSet<TenantUserPermission> TenantUserPermissions { get; set; }  
 
 
 

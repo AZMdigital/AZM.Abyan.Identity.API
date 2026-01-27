@@ -878,11 +878,41 @@ public class KeycloakService : IKeycloakService
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
-
+        //var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        //var result = JsonDocument.Parse(json).RootElement;
         var roles = await response.Content.ReadFromJsonAsync<List<ClientRoleResponse>>(cancellationToken: cancellationToken);
         return roles ?? new List<ClientRoleResponse>();
     }
+    public async Task<UserRoleMappingsResponse?> GetUserRoleMappingsAsync(string userId,string adminToken,CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings";
+        var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
 
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content
+            .ReadFromJsonAsync<UserRoleMappingsResponse>(cancellationToken: cancellationToken);
+    }
+    public async Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId,string roleName,string adminToken,CancellationToken cancellationToken)
+    {
+        var endpoint =$"/admin/realms/{_config.Realm}/clients/{clientId}/roles/{roleName}";
+        var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(cancellationToken));
+
+        return doc.RootElement.TryGetProperty("attributes", out var attrs)
+            ? JsonSerializer.Deserialize<Dictionary<string, string[]>>(attrs.GetRawText())!
+            : new();
+    }
     public async Task DeleteUserAsync(string userId, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}";

@@ -45,7 +45,8 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
                 var createClientRequest = new CreateClientRequest
                 {
                     Name = request.Name,
-                    Description = request.Description ?? string.Empty
+                    Description = request.Description ?? string.Empty,
+                    RedirectUris=request.RedirectUris
                 };
 
                 var keycloakClientId = await _keycloakService.CreateClientAsync(request.RealmName, createClientRequest, adminToken, cancellationToken);

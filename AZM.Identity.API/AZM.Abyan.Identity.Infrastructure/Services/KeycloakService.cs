@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -538,6 +538,20 @@ public class KeycloakService : IKeycloakService
     {
         var endpoint = $"/admin/realms/{realm}/clients";
 
+        //var client = new
+        //{
+        //    clientId = request.Name,
+        //    name = request.Name,
+        //    description = request.Description,
+        //    enabled = true,
+        //    protocol = "openid-connect",
+        //    publicClient = false,
+        //    bearerOnly = false,
+        //    serviceAccountsEnabled = true,
+        //    authorizationServicesEnabled = true,
+        //    redirectUris = Array.Empty<string>(),
+        //    webOrigins = Array.Empty<string>()
+        //};
         var client = new
         {
             clientId = request.Name,
@@ -545,12 +559,15 @@ public class KeycloakService : IKeycloakService
             description = request.Description,
             enabled = true,
             protocol = "openid-connect",
-            publicClient = false,
+            publicClient = true,
             bearerOnly = false,
-            serviceAccountsEnabled = true,
-            authorizationServicesEnabled = true,
-            redirectUris = Array.Empty<string>(),
-            webOrigins = Array.Empty<string>()
+            serviceAccountsEnabled = false,       
+            authorizationServicesEnabled = false,
+            redirectUris =request.RedirectUris,
+            webOrigins = Array.Empty<string>(),
+            standardFlowEnabled = true,          
+            implicitFlowEnabled = false,
+            directAccessGrantsEnabled = false
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(client);
@@ -589,13 +606,20 @@ public class KeycloakService : IKeycloakService
 
         var client = new
         {
+            clientId = request.Name,
             name = request.Name,
             description = request.Description,
             enabled = true,
-            serviceAccountsEnabled = true,
-            authorizationServicesEnabled = true,
-            redirectUris = Array.Empty<string>(),
-            webOrigins = Array.Empty<string>()
+            protocol = "openid-connect",
+            publicClient = true,
+            bearerOnly = false,
+            serviceAccountsEnabled = false,
+            authorizationServicesEnabled = false,
+            redirectUris = request.RedirectUris,
+            webOrigins = Array.Empty<string>(),
+            standardFlowEnabled = true,
+            implicitFlowEnabled = false,
+            directAccessGrantsEnabled = false
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(client);

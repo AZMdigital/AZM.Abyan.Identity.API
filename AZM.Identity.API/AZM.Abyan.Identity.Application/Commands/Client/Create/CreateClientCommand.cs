@@ -14,6 +14,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; }
+        public List<string> RedirectUris { get; set; } = new();
         public string RealmName { get; set; } = string.Empty;
     }
 }

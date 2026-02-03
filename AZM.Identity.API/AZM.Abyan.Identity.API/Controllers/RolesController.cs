@@ -6,6 +6,7 @@ using AZM.Abyan.Identity.Application.Commands.Role.Update;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,11 +31,11 @@ public class RolesController : ControllerBase
 
     [HttpGet("clients/{clientId}")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<ClientRoleResponse>>> GetClientRoles(string realm, string clientId, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<ClientRoleResponse>>> GetClientRoles(string realm, Guid clientId, CancellationToken cancellationToken)
     {
         try
         {
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
             return Ok(roles);
         }
         catch (Exception ex)
@@ -66,12 +67,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpPut("clients/{clientId}/{roleName}")]
-    public async Task<ActionResult> UpdateClientRole(string realm, string clientId, string roleName, [FromBody] UpdateClientRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UpdateClientRole(string realm, Guid clientId, string roleName, [FromBody] UpdateClientRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
             // Get role by name to find the local ID
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
             
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
@@ -84,7 +85,7 @@ public class RolesController : ControllerBase
                 RoleId = roleIdGuid,
                 UpdateRoleRequest = request,
                 Realm = realm,
-                KeycloakClientId = clientId,
+                KeycloakClientId = clientId.ToString(),
                 RoleName = roleName // Original role name for Keycloak update
             };
 
@@ -98,12 +99,12 @@ public class RolesController : ControllerBase
     }
 
     [HttpDelete("clients/{clientId}/{roleName}")]
-    public async Task<ActionResult> DeleteClientRole(string realm, string clientId, string roleName, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeleteClientRole(string realm, Guid clientId, string roleName, CancellationToken cancellationToken)
     {
         try
         {
             // Get role by name to find the local ID
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
+            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
             
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
@@ -115,7 +116,7 @@ public class RolesController : ControllerBase
             {
                 RoleId = roleIdGuid,
                 Realm = realm,
-                KeycloakClientId = clientId,
+                KeycloakClientId = clientId.ToString(),
                 RoleName = roleName
             };
 
@@ -129,10 +130,11 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("assign")]
-    public async Task<ActionResult> AssignClientRoleToUser(string realm, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> AssignClientRoleToUser(string realm, Guid clientId, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
+            request.ClientId = clientId.ToString();
             var command = new AssignClientRoleToUserCommand
             {
                 AssignRoleRequest = request,
@@ -149,10 +151,11 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost("unassign")]
-    public async Task<ActionResult> UnassignClientRoleFromUser(string realm, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UnassignClientRoleFromUser(string realm, Guid clientId, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
         try
         {
+            request.ClientId = clientId.ToString();
             var command = new RemoveClientRoleFromUserCommand
             {
                 AssignRoleRequest = request,

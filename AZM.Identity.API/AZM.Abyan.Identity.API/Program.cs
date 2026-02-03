@@ -181,7 +181,8 @@ var app = builder.Build();
 app.UseExceptionHandler("/error");
 
 // Swagger
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+if (true)
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>

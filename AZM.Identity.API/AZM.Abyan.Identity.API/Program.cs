@@ -1,237 +1,119 @@
 using System;
 using System.Reflection;
+using AZM.Abyan.Identity.API.Extensions;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
-using AZM.Abyan.Identity.Domain.Interfaces;
-using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
-using AZM.Abyan.Identity.Infrastructure.Services;
-using AZM.Abyan.Identity.Persistence.DbContexts;
-using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
-using AZM.Abyan.Identity.Persistence.Repositories.GenericRepository;
-using FluentValidation;
-using MediatR;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Options;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.PostgreSQL;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateLogger();
 
-#region Services
-
-// Controllers
-builder.Services.AddControllers();
-
-// DbContext
-builder.Services.AddDbContext<IdentityDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Localization
-builder.Services.AddLocalization();
-
-// MediatR (REGISTER ONCE)
-builder.Services.AddMediatR(cfg =>
+try
 {
-    cfg.RegisterServicesFromAssembly(typeof(
-        AZM.Abyan.Identity.Application.Commands.Client.Create.CreateClientCommand
-    ).Assembly);
+    Log.Information("Starting AZM Identity API");
 
-    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-});
+    #region Service Configuration
+    var builder = WebApplication.CreateBuilder(args);
 
-// FluentValidation (from Application layer)
-builder.Services.AddValidatorsFromAssembly(
-    typeof(AZM.Abyan.Identity.Application.Commands.Client.Create.CreateClientCommand).Assembly,
-    ServiceLifetime.Scoped);
-
-// Shared Localizer
-builder.Services.AddScoped(provider =>
-{
-    var factory = provider.GetRequiredService<IStringLocalizerFactory>();
-    return factory.Create("SharedResources", typeof(SharedResource).Assembly.FullName!);
-});
-
-// Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "AZM Identity API",
-        Version = "v1",
-        Description = "Keycloak API Interface for Identity Management"
-    });
-
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
-        Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console().WriteTo.PostgreSQL(
+        connectionString: context.Configuration.GetConnectionString("DefaultConnection"),
+        tableName: "Logs",
+        restrictedToMinimumLevel: LogEventLevel.Error,
+        needAutoCreateTable: true,
+        columnOptions: new Dictionary<string, ColumnWriterBase>
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+            { "Message", new RenderedMessageColumnWriter() },
+            { "MessageTemplate", new MessageTemplateColumnWriter() },
+            { "Level", new LevelColumnWriter() },
+            { "TimeStamp", new TimestampColumnWriter() },
+            { "Exception", new ExceptionColumnWriter() },
+            { "LogEvent", new LogEventSerializedColumnWriter() },
+            { "Properties", new PropertiesColumnWriter() }
         }
-    });
-});
+    ));
+    builder.Services.AddIdentityServices(builder.Configuration);
+    #endregion
 
-// Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
-    var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
-    var realm = keycloakSettings?.Realm ?? "Abyan";
+    var app = builder.Build();
 
-        options.Authority = $"{keycloakUrl}/realms/{realm}";
-        options.RequireHttpsMetadata = false;
+    #region Middleware
 
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    // Global Exception Handler
+    app.UseExceptionHandler("/error");
+
+    // Swagger
+    //if (app.Environment.IsDevelopment())
+    if (true)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            ValidateIssuer = true,
-            ValidIssuers = new[]
-            {
-                $"{keycloakUrl}/realms/{realm}",
-                $"{keycloakUrl}/realms/master"
-            },
-            ValidateAudience = false,
-            ValidateLifetime = true
-        };
-    });
-
-// Keycloak configuration - using KeycloakFormbuilder as default application config
-builder.Services.Configure<KeycloakConfiguration>(
-    builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
-
-// KeycloakConfigurations binding - binds the entire KeycloakConfigurations section
-builder.Services.Configure<KeycloakConfigurations>(
-    builder.Configuration.GetSection("KeycloakConfigurations"));
-
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddMemoryCache(options =>
-{
-    options.SizeLimit = 1024;
-    options.CompactionPercentage = 0.25;
-});
-
-// HttpClient
-builder.Services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
-{
-    var config = sp.GetRequiredService<IOptions<KeycloakConfiguration>>().Value;
-    client.BaseAddress = new Uri(config.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(5);
-});
-
-// Application Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IClientService, ClientService>();
-builder.Services.AddScoped<IGroupService, GroupService>();
-builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IRealmResolverService, RealmResolverService>();
-
-// Generic Repositories
-builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<TenantUserPermission, Guid>, Repository<TenantUserPermission, Guid, IdentityDbContext>>();
-
-// Sync Services
-builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();
-builder.Services.AddScoped<IUserSyncService, UserSyncService>();
-builder.Services.AddScoped<IClientSyncService, ClientSyncService>();
-builder.Services.AddScoped<IRoleSyncService, RoleSyncService>();
-builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
-builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
-builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
-
-#endregion
-
-var app = builder.Build();
-
-#region Middleware
-
-// Global Exception Handler
-app.UseExceptionHandler("/error");
-
-// Swagger
-//if (app.Environment.IsDevelopment())
-if (true)
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AZM Identity API v1");
-        c.RoutePrefix = "swagger";
-    });
-}
-
-// HTTPS
-app.UseHttpsRedirection();
-
-// Localization
-var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture("en")
-    .AddSupportedCultures("en", "ar")
-    .AddSupportedUICultures("en", "ar");
-
-app.UseRequestLocalization(localizationOptions);
-
-// Security
-app.UseAuthentication();
-app.UseAuthorization();
-
-// app.UseMiddleware<PermissionMiddleware>();
-
-app.MapControllers();
-
-#endregion
-
-#region Startup Tasks
-
-using (var scope = app.Services.CreateScope())
-{
-    var permissionSyncService = scope.ServiceProvider
-        .GetRequiredService<IPermissionSyncService>();
-
-    try
-    {
-        await permissionSyncService
-            .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "AZM Identity API v1");
+            c.RoutePrefix = "swagger";
+        });
     }
-    catch (Exception ex)
+
+    // HTTPS
+    app.UseHttpsRedirection();
+
+    // Localization
+    var localizationOptions = new RequestLocalizationOptions()
+        .SetDefaultCulture("en")
+        .AddSupportedCultures("en", "ar")
+        .AddSupportedUICultures("en", "ar");
+
+    app.UseRequestLocalization(localizationOptions);
+
+    // Security
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    // app.UseMiddleware<PermissionMiddleware>();
+
+    app.MapControllers();
+
+    #endregion
+
+    #region Startup Tasks
+
+    using (var scope = app.Services.CreateScope())
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Failed to sync permissions on startup.");
+        var permissionSyncService = scope.ServiceProvider
+            .GetRequiredService<IPermissionSyncService>();
+
+        try
+        {
+            await permissionSyncService
+                .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Failed to sync permissions on startup.");
+        }
     }
+
+    #endregion
+
+    #region Application Startup
+    Log.Information("AZM Identity API started successfully on {Environment}",
+        app.Environment.EnvironmentName);
+
+    await app.RunAsync();
+    #endregion
 }
-
-#endregion
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "AZM Identity API terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

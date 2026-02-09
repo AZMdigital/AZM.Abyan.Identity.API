@@ -3,6 +3,7 @@ using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.ProtocolMappers;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
@@ -72,6 +73,11 @@ public interface IKeycloakService
     Task RemoveRealmRoleFromUserAsync(AssignRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task<UserRoleMappingsResponse?> GetUserRoleMappingsAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId, string roleName, string adminToken, CancellationToken cancellationToken);
+    
+    // Protocol Mappers
+    Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm, string clientScopeId, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task DisableProtocolMapperAsync(string realm, string clientScopeId, string mapperId, string adminToken, CancellationToken cancellationToken = default);
+    
     // Admin token helper
     Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default);
 }

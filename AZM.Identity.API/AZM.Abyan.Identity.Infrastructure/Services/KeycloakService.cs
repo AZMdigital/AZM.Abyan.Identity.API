@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -8,6 +8,7 @@ using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Groups;
+using AZM.Abyan.Identity.Application.DTOs.ProtocolMappers;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
@@ -1526,6 +1527,104 @@ public class KeycloakService : IKeycloakService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm, string clientScopeId, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models";
+
+        var mapper = new
+        {
+            name = request.Name,
+            protocol = "openid-connect",
+            protocolMapper = "oidc-hardcoded-claim-mapper",
+            config = new Dictionary<string, string>
+            {
+                ["claim.value"] = request.ClaimValue,
+                ["user.attribute"] = "",
+                ["id.token.claim"] = request.AddToIdToken.ToString().ToLowerInvariant(),
+                ["access.token.claim"] = request.AddToAccessToken.ToString().ToLowerInvariant(),
+                ["userinfo.token.claim"] = request.AddToUserInfo.ToString().ToLowerInvariant(),
+                ["claim.name"] = request.TokenClaimName,
+                ["jsonType.label"] = "String"
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(mapper);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = content
+        };
+        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var location = response.Headers.Location?.ToString();
+        if (string.IsNullOrEmpty(location))
+        {
+            throw new InvalidOperationException("Protocol mapper created but no location header returned");
+        }
+
+        // Extract mapper ID from location header
+        var mapperId = location.Split('/').Last();
+
+        // Fetch the created mapper to return full details
+        var getEndpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models/{mapperId}";
+        var getRequest = new HttpRequestMessage(HttpMethod.Get, getEndpoint);
+        getRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var getResponse = await _httpClient.SendAsync(getRequest, cancellationToken);
+        getResponse.EnsureSuccessStatusCode();
+
+        var mapperResponse = await getResponse.Content.ReadFromJsonAsync<ProtocolMapperResponse>(cancellationToken: cancellationToken);
+        return mapperResponse ?? throw new InvalidOperationException("Failed to retrieve created protocol mapper");
+    }
+
+    public async Task DisableProtocolMapperAsync(string realm, string clientScopeId, string mapperId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        // First get the current mapper to preserve other settings
+        var getEndpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models/{mapperId}";
+        var getRequest = new HttpRequestMessage(HttpMethod.Get, getEndpoint);
+        getRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var getResponse = await _httpClient.SendAsync(getRequest, cancellationToken);
+        getResponse.EnsureSuccessStatusCode();
+
+        var mapper = await getResponse.Content.ReadFromJsonAsync<ProtocolMapperResponse>(cancellationToken: cancellationToken);
+        if (mapper == null)
+        {
+            throw new KeyNotFoundException($"Protocol mapper {mapperId} not found");
+        }
+
+        // Update config to disable all token claims
+        mapper.Config["id.token.claim"] = "false";
+        mapper.Config["access.token.claim"] = "false";
+        mapper.Config["userinfo.token.claim"] = "false";
+
+        // Update the mapper
+        var updateEndpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models/{mapperId}";
+        var updatePayload = new
+        {
+            id = mapper.Id,
+            name = mapper.Name,
+            protocol = mapper.Protocol,
+            protocolMapper = mapper.ProtocolMapper,
+            config = mapper.Config
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(updatePayload);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var updateRequest = new HttpRequestMessage(HttpMethod.Put, updateEndpoint)
+        {
+            Content = content
+        };
+        updateRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var updateResponse = await _httpClient.SendAsync(updateRequest, cancellationToken);
+        updateResponse.EnsureSuccessStatusCode();
+    }
 
     private class TokenResponse
     {

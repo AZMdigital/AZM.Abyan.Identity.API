@@ -314,19 +314,33 @@ public class KeycloakService : IKeycloakService
         };
     }
 
-    public async Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
-    {
-        var logoutEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/logout";
+    //public async Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+    //{
+    //    var logoutEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/logout";
 
-        var requestBody = new List<KeyValuePair<string, string>>
-        {
-            new("client_id", _config.ClientId),
-            new("refresh_token", refreshToken)
-        };
+    //    var requestBody = new List<KeyValuePair<string, string>>
+    //    {
+    //        new("client_id", _config.ClientId),
+    //        new("refresh_token", refreshToken)
+    //    };
 
-        var content = new FormUrlEncodedContent(requestBody);
-        await _httpClient.PostAsync(logoutEndpoint, content, cancellationToken);
-    }
+    //    var content = new FormUrlEncodedContent(requestBody);
+    //    await _httpClient.PostAsync(logoutEndpoint, content, cancellationToken);
+    //}
+    public async Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default)
+{
+    var adminToken = await GetAdminTokenAsync(cancellationToken);
+
+    var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/logout";
+
+    var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+    request.Headers.Authorization =
+        new AuthenticationHeaderValue("Bearer", adminToken);
+
+    var response = await _httpClient.SendAsync(request, cancellationToken);
+
+    response.EnsureSuccessStatusCode();
+}
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, string adminToken, CancellationToken cancellationToken = default)
     {

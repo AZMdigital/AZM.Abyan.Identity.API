@@ -15,7 +15,9 @@ public interface IKeycloakService
     // Auth
     Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
     Task<LoginResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
-    Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
+    // Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
+     Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default);
+
 
     // Users
     Task<string> CreateUserAsync(CreateUserRequest request, string adminToken, CancellationToken cancellationToken = default);

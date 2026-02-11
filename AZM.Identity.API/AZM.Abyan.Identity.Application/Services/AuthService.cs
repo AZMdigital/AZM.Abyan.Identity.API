@@ -21,9 +21,9 @@ public class AuthService : IAuthService
         return await _keycloakService.RefreshTokenAsync(request.RefreshToken, cancellationToken);
     }
 
-    public async Task LogoutAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
+    public async Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default)
     {
-        await _keycloakService.LogoutAsync(request.RefreshToken, cancellationToken);
+        await _keycloakService.LogoutUserAsync(userId, cancellationToken);
     }
 }
 

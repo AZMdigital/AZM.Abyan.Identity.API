@@ -50,12 +50,25 @@ public class AuthController : ControllerBase
         }
     }
 
+    //[HttpPost("logout")]
+    //public async Task<ActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        await _authService.LogoutAsync(request, cancellationToken);
+    //        return Ok(new { message = _localizer["OperationSuccess"] ?? "Operation completed successfully" });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
+    //    }
+    //}
     [HttpPost("logout")]
-    public async Task<ActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> Logout(string userId, CancellationToken cancellationToken)
     {
         try
         {
-            await _authService.LogoutAsync(request, cancellationToken);
+            await _authService.LogoutUserAsync(userId, cancellationToken);
             return Ok(new { message = _localizer["OperationSuccess"] ?? "Operation completed successfully" });
         }
         catch (Exception ex)

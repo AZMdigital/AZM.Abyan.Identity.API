@@ -64,11 +64,11 @@ public class AuthController : ControllerBase
     //    }
     //}
     [HttpPost("logout")]
-    public async Task<ActionResult> Logout(string userId, CancellationToken cancellationToken)
+    public async Task<ActionResult> Logout(Guid userId, CancellationToken cancellationToken)
     {
         try
         {
-            await _authService.LogoutUserAsync(userId, cancellationToken);
+            await _authService.LogoutUserAsync(userId.ToString(), cancellationToken);
             return Ok(new { message = _localizer["OperationSuccess"] ?? "Operation completed successfully" });
         }
         catch (Exception ex)

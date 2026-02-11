@@ -63,7 +63,12 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
                 };
 
                 await _repository.AddAsync(client, cancellationToken);
-
+                var createMapperTenandid = await _keycloakService.CreateProtocolMapperAsync(request.RealmName, client.Id.ToString(), request.Name, new DTOs.ProtocolMappers.CreateProtocolMapperRequest
+                {
+                    Name = request.Name,
+                    TokenClaimName = "TenantId",
+                    ClaimValue = client.Id.ToString()
+                }, adminToken, cancellationToken);
                 return Result<Guid>.Created(client.Id, _localizer["ClientCreatedSuccessfully"]);
             }
             catch (Exception ex)

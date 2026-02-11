@@ -75,7 +75,7 @@ public interface IKeycloakService
     Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId, string roleName, string adminToken, CancellationToken cancellationToken);
     
     // Protocol Mappers
-    Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm, string clientScopeId, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm,string clientId, string clientScopeName, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DisableProtocolMapperAsync(string realm, string clientScopeId, string mapperId, string adminToken, CancellationToken cancellationToken = default);
     
     // Admin token helper

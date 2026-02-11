@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
-[Route("api/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers")]
+[Route("api/realms/{realm}/client-scopes/{clientScopeName}/protocol-mappers")]
 public class ProtocolMappersController : ControllerBase
 {
     private readonly IKeycloakService _keycloakService;
@@ -18,15 +18,16 @@ public class ProtocolMappersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProtocolMapperResponse>> CreateProtocolMapper(
         string realm,
-        string clientScopeId,
+        string clientScopeName,
+        string clientId,
         [FromBody] CreateProtocolMapperRequest request,
         CancellationToken cancellationToken)
     {
         try
         {
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            var mapper = await _keycloakService.CreateProtocolMapperAsync(realm, clientScopeId, request, adminToken, cancellationToken);
-            return CreatedAtAction(nameof(CreateProtocolMapper), new { realm, clientScopeId, mapperId = mapper.Id }, mapper);
+            var mapper = await _keycloakService.CreateProtocolMapperAsync(realm, clientId, clientScopeName,  request, adminToken, cancellationToken);
+            return CreatedAtAction(nameof(CreateProtocolMapper), new { realm, clientScopeName, mapperId = mapper.Id }, mapper);
         }
         catch (Exception ex)
         {

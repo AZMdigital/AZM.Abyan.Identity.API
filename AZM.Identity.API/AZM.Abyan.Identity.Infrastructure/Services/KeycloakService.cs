@@ -1,9 +1,11 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
+using AZM.Abyan.Identity.Application.DTOs;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
@@ -15,6 +17,7 @@ using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
+using Azure.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using static System.Net.WebRequestMethods;
@@ -143,41 +146,147 @@ public class KeycloakService : IKeycloakService
 
     public async Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        var tokenEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/token"; 
+        var adminToken = await GetAdminTokenAsync(cancellationToken);
 
-        var requestBody = new List<KeyValuePair<string, string>>
-        {
-            new("grant_type", "password"),
-            new("client_id", _config.ClientId),
-            new("username", username),
-            new("password", password)
-        };
+        var userId = await GetUserIdAsync(username, adminToken, cancellationToken);
+        var clientWithRoles = await GetClientWithRolesAsync(userId, adminToken, cancellationToken);
 
-        if (!string.IsNullOrEmpty(_config.ClientSecret))
-        {
-            requestBody.Add(new KeyValuePair<string, string>("client_secret", _config.ClientSecret));
-        }
+        if (clientWithRoles == null)
+            throw new Exception("User has no client roles");
 
-        var content = new FormUrlEncodedContent(requestBody);
-        var response = await _httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
+        var clientSecret = await GetClientSecretAsync(
+            clientWithRoles.ClientInternalId,
+            adminToken,
+            cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new HttpRequestException($"Keycloak authentication failed ({(int)response.StatusCode} {response.StatusCode}): {errorContent}");
-        }
-
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
+        var token = await GetTokenAsync(
+            username,
+            password,
+            clientWithRoles.ClientId,
+            clientSecret,
+            cancellationToken);
 
         return new LoginResponse
         {
-            AccessToken = tokenResponse?.AccessToken ?? string.Empty,
-            RefreshToken = tokenResponse?.RefreshToken ?? string.Empty,
-            ExpiresIn = tokenResponse?.ExpiresIn ?? 0,
-            TokenType = tokenResponse?.TokenType ?? "Bearer"
+            AccessToken = token.AccessToken,
+            RefreshToken = token.RefreshToken,
+            ExpiresIn = token.ExpiresIn,
+            TokenType = token.TokenType
         };
     }
+    private async Task<string> GetUserIdAsync(
+      string username,
+      string adminToken,
+      CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_config.Realm}/users?username={username}");
 
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+
+        var users = await response.Content.ReadFromJsonAsync<List<UserDto>>(ct);
+        return users?.FirstOrDefault()?.Id
+               ?? throw new Exception("User not found");
+    }
+
+    private async Task<ClientWithRoles?> GetClientWithRolesAsync(
+     string userId,
+     string adminToken,
+     CancellationToken ct)
+    {
+        var clientsRequest = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_config.Realm}/clients");
+
+        clientsRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var clientsResponse = await _httpClient.SendAsync(clientsRequest, ct);
+        clientsResponse.EnsureSuccessStatusCode();
+
+        var clients = await clientsResponse.Content.ReadFromJsonAsync<List<ClientDto>>(ct);
+
+        foreach (var client in clients!)
+        {
+            var rolesRequest = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings/clients/{client.Id}");
+
+            rolesRequest.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", adminToken);
+
+            var rolesResponse = await _httpClient.SendAsync(rolesRequest, ct);
+            if (!rolesResponse.IsSuccessStatusCode)
+                continue;
+
+            var roles = await rolesResponse.Content.ReadFromJsonAsync<List<RoleDto>>(ct);
+
+            if (roles != null && roles.Any())
+            {
+                return new ClientWithRoles
+                {
+                    ClientId = client.ClientId,
+                    ClientInternalId = client.Id,
+                    Roles = roles.Select(r => r.Name).ToList()
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<string> GetClientSecretAsync(
+      string clientInternalId,
+      string adminToken,
+      CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_config.Realm}/clients/{clientInternalId}/client-secret");
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+
+        var secret = await response.Content.ReadFromJsonAsync<ClientSecretDto>(ct);
+        return secret?.Value ?? throw new Exception("Client secret not found");
+    }
+
+    private async Task<TokenResponse> GetTokenAsync(
+    string username,
+    string password,
+    string clientId,
+    string clientSecret,
+    CancellationToken cancellationToken)
+    {
+        var tokenEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/token";
+
+        var body = new List<KeyValuePair<string, string>>
+        {
+            new("grant_type", "password"),
+            new("client_id", clientId),
+            new("username", username),
+            new("password", password)
+        };
+        if (!string.IsNullOrWhiteSpace(clientSecret))
+        {
+            body.Add(new("client_secret", clientSecret));
+        }
+        var response = await _httpClient.PostAsync(
+            tokenEndpoint,
+            new FormUrlEncodedContent(body),
+            cancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return result ?? throw new Exception("Token error");
+    }
     public async Task<LoginResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var tokenEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/token";
@@ -233,13 +342,13 @@ public class KeycloakService : IKeycloakService
             emailVerified = request.EmailVerified,
             credentials = new[]
             {
-                new
-                {
-                    type = "password",
-                    value = request.Password,
-                    temporary = false
-                }
+            new
+            {
+                type = "password",
+                value = request.Password,
+                temporary = false
             }
+        }
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(userPayload);
@@ -252,20 +361,68 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
 
-        if (response.IsSuccessStatusCode)
+        var location = response.Headers.Location?.ToString();
+        if (!string.IsNullOrEmpty(location))
         {
-            var location = response.Headers.Location?.ToString();
-            if (!string.IsNullOrEmpty(location))
-            {
-                var userId = location.Split('/').Last();
-                return userId;
-            }
+            var userId = location.Split('/').Last();
+
+            // ✅Delete default role
+            await RemoveAllDefaultRolesAsync(userId, adminToken, cancellationToken);
+
+            return userId;
         }
 
-        response.EnsureSuccessStatusCode();
         return string.Empty;
     }
+
+    private async Task RemoveAllDefaultRolesAsync(string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var realm = _config.Realm;
+
+        // 1. Get default roles realm
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/admin/realms/{realm}/roles");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var rolesResponse = await _httpClient.SendAsync(request, cancellationToken);
+        rolesResponse.EnsureSuccessStatusCode();
+
+        if (!rolesResponse.IsSuccessStatusCode)
+        {
+            var content = await rolesResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Failed to get roles: {rolesResponse.StatusCode}, {content}");
+            return;
+        }
+        rolesResponse.EnsureSuccessStatusCode();
+
+        var rolesJson = await rolesResponse.Content.ReadAsStringAsync(cancellationToken);
+        var roles = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(rolesJson);
+
+        // 2. Get role which start by "default-roles"
+        var defaultRoles = roles.EnumerateArray()
+            .Where(r => r.GetProperty("name").GetString()?.StartsWith("default-roles") == true)
+            .Select(r => new
+            {
+                id = r.GetProperty("id").GetString(),
+                name = r.GetProperty("name").GetString()
+            })
+            .ToArray();
+
+        if (defaultRoles.Length == 0) return;
+
+        // 3. Delete Them
+        var json = System.Text.Json.JsonSerializer.Serialize(defaultRoles);
+        var requestnew = new HttpRequestMessage(HttpMethod.Delete, $"/admin/realms/{realm}/users/{userId}/role-mappings/realm")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        requestnew.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var deleteResponse = await _httpClient.SendAsync(requestnew, cancellationToken);
+        deleteResponse.EnsureSuccessStatusCode();
+    }
+
 
     public async Task<List<UserResponse>> GetUsersAsync(string realm, string adminToken, CancellationToken cancellationToken = default)
     {
@@ -326,7 +483,7 @@ public class KeycloakService : IKeycloakService
 
     public async Task<List<ClientRoleResponse>> GetClientRolesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/roles"; 
+        var endpoint = $"/admin/realms/{realm}/clients/{clientId}/roles";
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -340,7 +497,7 @@ public class KeycloakService : IKeycloakService
 
     public async Task AssignClientRoleToUserAsync(string realm, string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default)
     {
-        var roleEndpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}"; 
+        var roleEndpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}";
 
         var roleRequest = new HttpRequestMessage(HttpMethod.Get, roleEndpoint);
         roleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -359,7 +516,7 @@ public class KeycloakService : IKeycloakService
         if (role == null)
             throw new KeyNotFoundException($"Role {roleName} not found in client {clientId}");
 
-        var assignEndpoint = $"/admin/realms/{realm}/users/{userId}/role-mappings/clients/{clientId}"; 
+        var assignEndpoint = $"/admin/realms/{realm}/users/{userId}/role-mappings/clients/{clientId}";
 
         var rolesPayload = new[]
         {
@@ -389,7 +546,7 @@ public class KeycloakService : IKeycloakService
 
     public async Task RemoveClientRoleFromUserAsync(string realm, string userId, string clientId, string roleName, string adminToken, CancellationToken cancellationToken = default)
     {
-        var roleEndpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}"; 
+        var roleEndpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}";
 
         var roleRequest = new HttpRequestMessage(HttpMethod.Get, roleEndpoint);
         roleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -450,7 +607,7 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        
+
         // DEBUG: Capture response details as JSON string for debugging
         var debugResponseJson = System.Text.Json.JsonSerializer.Serialize(new
         {
@@ -462,7 +619,7 @@ public class KeycloakService : IKeycloakService
             RequestMethod = response.RequestMessage?.Method?.ToString()
         });
         var debugResponseForInspector = debugResponseJson; // Variable for debugger inspection
-        
+
         response.EnsureSuccessStatusCode();
     }
 
@@ -515,7 +672,7 @@ public class KeycloakService : IKeycloakService
         return clients ?? new List<ClientResponse>();
     }
 
-    public async Task<ClientResponse?> GetClientByIdAsync(string realm,string clientId,string adminToken,CancellationToken cancellationToken = default)
+    public async Task<ClientResponse?> GetClientByIdAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients?clientId={clientId}";
 
@@ -560,15 +717,15 @@ public class KeycloakService : IKeycloakService
             description = request.Description,
             enabled = true,
             protocol = "openid-connect",
-            publicClient = true,
+            publicClient = false,
             bearerOnly = false,
-            serviceAccountsEnabled = false,       
+            serviceAccountsEnabled = false,
             authorizationServicesEnabled = false,
-            redirectUris =request.RedirectUris,
+            redirectUris = request.RedirectUris,
             webOrigins = Array.Empty<string>(),
-            standardFlowEnabled = true,          
+            standardFlowEnabled = true,
             implicitFlowEnabled = false,
-            directAccessGrantsEnabled = false
+            directAccessGrantsEnabled = true
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(client);
@@ -588,7 +745,7 @@ public class KeycloakService : IKeycloakService
         }
         response.EnsureSuccessStatusCode();
 
-        var getRequest = new HttpRequestMessage(HttpMethod.Get,$"/admin/realms/{_config.Realm}/clients?clientId={client.clientId}");
+        var getRequest = new HttpRequestMessage(HttpMethod.Get, $"/admin/realms/{_config.Realm}/clients?clientId={client.clientId}");
 
         getRequest.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
@@ -814,7 +971,7 @@ public class KeycloakService : IKeycloakService
             type = "password",
             value = request.NewPassword,
             //  temporary = request.Temporary
-            temporary=false
+            temporary = false
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(payload);
@@ -908,7 +1065,7 @@ public class KeycloakService : IKeycloakService
         var roles = await response.Content.ReadFromJsonAsync<List<ClientRoleResponse>>(cancellationToken: cancellationToken);
         return roles ?? new List<ClientRoleResponse>();
     }
-    public async Task<UserRoleMappingsResponse?> GetUserRoleMappingsAsync(string userId,string adminToken,CancellationToken cancellationToken = default)
+    public async Task<UserRoleMappingsResponse?> GetUserRoleMappingsAsync(string userId, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/role-mappings";
         var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
@@ -921,9 +1078,9 @@ public class KeycloakService : IKeycloakService
         return await response.Content
             .ReadFromJsonAsync<UserRoleMappingsResponse>(cancellationToken: cancellationToken);
     }
-    public async Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId,string roleName,string adminToken,CancellationToken cancellationToken)
+    public async Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId, string roleName, string adminToken, CancellationToken cancellationToken)
     {
-        var endpoint =$"/admin/realms/{_config.Realm}/clients/{clientId}/roles/{roleName}";
+        var endpoint = $"/admin/realms/{_config.Realm}/clients/{clientId}/roles/{roleName}";
         var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
         request.Headers.Authorization =
             new AuthenticationHeaderValue("Bearer", adminToken);
@@ -1400,10 +1557,10 @@ public class KeycloakService : IKeycloakService
         httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
         var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-    if (!response.IsSuccessStatusCode)
-        throw new Exception($"Keycloak error {(int)response.StatusCode}: {body}");
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Keycloak error {(int)response.StatusCode}: {body}");
         response.EnsureSuccessStatusCode();
 
         var created = await response.Content.ReadFromJsonAsync<PermissionDto>(cancellationToken: cancellationToken);
@@ -1527,11 +1684,75 @@ public class KeycloakService : IKeycloakService
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm, string clientScopeId, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default)
+    public async Task<ProtocolMapperResponse> CreateProtocolMapperAsync(
+    string realm,
+    string clientId,
+    string clientScopeName,
+    CreateProtocolMapperRequest request,
+    string adminToken,
+    CancellationToken cancellationToken = default)
     {
-        var endpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models";
+        // ===============================
+        // 0️⃣ Get or Create Client Scope
+        // ===============================
+        var getScopeEndpoint =
+            $"/admin/realms/{realm}/client-scopes?search={clientScopeName}";
 
-        var mapper = new
+        var getScopeRequest = new HttpRequestMessage(HttpMethod.Get, getScopeEndpoint);
+        getScopeRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var getScopeResponse = await _httpClient.SendAsync(getScopeRequest, cancellationToken);
+        getScopeResponse.EnsureSuccessStatusCode();
+
+        var scopes = await getScopeResponse.Content
+            .ReadFromJsonAsync<List<ClientScopeResponse>>(cancellationToken: cancellationToken);
+
+        var scope = scopes?.FirstOrDefault(s => s.Name == clientScopeName);
+
+        if (scope == null)
+        {
+            var createScopePayload = new
+            {
+                name = clientScopeName,
+                protocol = "openid-connect"
+            };
+
+            var jsonScope = System.Text.Json.JsonSerializer.Serialize(createScopePayload);
+            var scopeContent = new StringContent(jsonScope, Encoding.UTF8, "application/json");
+
+            var createScopeRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"/admin/realms/{realm}/client-scopes")
+            {
+                Content = scopeContent
+            };
+            createScopeRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+            var createScopeResponse =
+                await _httpClient.SendAsync(createScopeRequest, cancellationToken);
+            createScopeResponse.EnsureSuccessStatusCode();
+
+            var location = createScopeResponse.Headers.Location?.ToString()
+                ?? throw new InvalidOperationException("Client scope created but no location returned");
+
+            var scopeId = location.Split('/').Last();
+
+            scope = new ClientScopeResponse
+            {
+                Id = scopeId,
+                Name = clientScopeName
+            };
+        }
+
+        // ===============================
+        // 1️⃣ Create Protocol Mapper
+        // ===============================
+        var mapperEndpoint =
+            $"/admin/realms/{realm}/client-scopes/{scope.Id}/protocol-mappers/models";
+
+        var mapperPayload = new
         {
             name = request.Name,
             protocol = "openid-connect",
@@ -1539,46 +1760,65 @@ public class KeycloakService : IKeycloakService
             config = new Dictionary<string, string>
             {
                 ["claim.value"] = request.ClaimValue,
-                ["user.attribute"] = "",
+                ["claim.name"] = request.TokenClaimName,
+                ["jsonType.label"] = "String",
+
                 ["id.token.claim"] = request.AddToIdToken.ToString().ToLowerInvariant(),
                 ["access.token.claim"] = request.AddToAccessToken.ToString().ToLowerInvariant(),
-                ["userinfo.token.claim"] = request.AddToUserInfo.ToString().ToLowerInvariant(),
-                ["claim.name"] = request.TokenClaimName,
-                ["jsonType.label"] = "String"
+                ["userinfo.token.claim"] = request.AddToUserInfo.ToString().ToLowerInvariant()
             }
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(mapper);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var jsonMapper = System.Text.Json.JsonSerializer.Serialize(mapperPayload);
+        var mapperContent = new StringContent(jsonMapper, Encoding.UTF8, "application/json");
 
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        var createMapperRequest = new HttpRequestMessage(HttpMethod.Post, mapperEndpoint)
         {
-            Content = content
+            Content = mapperContent
         };
-        httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+        createMapperRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
-        var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var createMapperResponse =
+            await _httpClient.SendAsync(createMapperRequest, cancellationToken);
+        createMapperResponse.EnsureSuccessStatusCode();
 
-        var location = response.Headers.Location?.ToString();
-        if (string.IsNullOrEmpty(location))
-        {
-            throw new InvalidOperationException("Protocol mapper created but no location header returned");
-        }
+        var mapperLocation = createMapperResponse.Headers.Location?.ToString()
+            ?? throw new InvalidOperationException("Mapper created but no location returned");
 
-        // Extract mapper ID from location header
-        var mapperId = location.Split('/').Last();
+        var mapperId = mapperLocation.Split('/').Last();
 
-        // Fetch the created mapper to return full details
-        var getEndpoint = $"/admin/realms/{realm}/client-scopes/{clientScopeId}/protocol-mappers/models/{mapperId}";
-        var getRequest = new HttpRequestMessage(HttpMethod.Get, getEndpoint);
-        getRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+        // ===============================
+        // 2️⃣ Assign Scope to Client (DEFAULT)
+        // ===============================
+        var assignEndpoint =
+            $"/admin/realms/{realm}/clients/{clientId}/default-client-scopes/{scope.Id}";
 
-        var getResponse = await _httpClient.SendAsync(getRequest, cancellationToken);
-        getResponse.EnsureSuccessStatusCode();
+        var assignRequest = new HttpRequestMessage(HttpMethod.Put, assignEndpoint);
+        assignRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
 
-        var mapperResponse = await getResponse.Content.ReadFromJsonAsync<ProtocolMapperResponse>(cancellationToken: cancellationToken);
-        return mapperResponse ?? throw new InvalidOperationException("Failed to retrieve created protocol mapper");
+        var assignResponse =
+            await _httpClient.SendAsync(assignRequest, cancellationToken);
+        assignResponse.EnsureSuccessStatusCode();
+
+        // ===============================
+        // 3️⃣ Return Mapper
+        // ===============================
+        var getMapperEndpoint =
+            $"/admin/realms/{realm}/client-scopes/{scope.Id}/protocol-mappers/models/{mapperId}";
+
+        var getMapperRequest = new HttpRequestMessage(HttpMethod.Get, getMapperEndpoint);
+        getMapperRequest.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", adminToken);
+
+        var getMapperResponse =
+            await _httpClient.SendAsync(getMapperRequest, cancellationToken);
+        getMapperResponse.EnsureSuccessStatusCode();
+
+        return await getMapperResponse.Content
+            .ReadFromJsonAsync<ProtocolMapperResponse>(cancellationToken: cancellationToken)
+            ?? throw new InvalidOperationException("Failed to retrieve mapper");
     }
 
     public async Task DisableProtocolMapperAsync(string realm, string clientScopeId, string mapperId, string adminToken, CancellationToken cancellationToken = default)

@@ -77,21 +77,26 @@ public class PermissionsController : ControllerBase
     {
         try
         {
-            // clientId parameter is the Keycloak client string ID (e.g., "formbuilder")
-            // Command handler will create permission as role in Keycloak and save to database
+            if (!Guid.TryParse(clientId, out var clientIdGuid))
+            {
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
+            }
+
+            // Command handler will create permission in Keycloak and save to database
             CreatePermissionCommand command = new CreatePermissionCommand
             {
                 Name = request.Name,
                 Description = request.Description,
-                Controller = request.Controller,
-                Action = request.Action,
+                ScopeId = request.ScopeId,
+                ResourceId = request.ResourceId,
+                PolicyId = request.PolicyId,
+                ClientId = clientIdGuid, // Local client ID (Guid, same as Keycloak ID now)
                 RealmName = realm,
-                KeycloakClientId = clientId // Keycloak client string ID (e.g., "formbuilder")
+                KeycloakClientId = clientId // Keycloak client ID (string)
             };
 
             var result = await _mediator.Send(command, cancellationToken);
-            var response = StatusCode(result.StatusCode, result);
-            return response;
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {
@@ -112,9 +117,7 @@ public class PermissionsController : ControllerBase
             var command = new UpdatePermissionCommand
             {
                 PermissionId = permissionIdGuid,
-                UpdatePermissionRequest = request,
-                RealmName = realm,
-                KeycloakClientId = clientId
+                UpdatePermissionRequest = request
             };
 
             var result = await _mediator.Send(command, cancellationToken);

@@ -22,6 +22,9 @@ public class IdentityDbContext : DbContext
     public DbSet<Role> Roles { get; set; }
     public DbSet<TenantUserRole> TenantUserRoles { get; set; }
     public DbSet<Permission> Permissions { get; set; }
+    public DbSet<Scope> Scopes { get; set; }
+    public DbSet<Policy> Policies { get; set; }
+    public DbSet<Resource> Resources { get;set; }
     public DbSet<Client> Clients { get; set; }
 
 

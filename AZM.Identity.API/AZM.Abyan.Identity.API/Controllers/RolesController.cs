@@ -48,16 +48,22 @@ public class RolesController : ControllerBase
     {
         try
         {
-            // clientId parameter is the Keycloak client string ID (e.g., "formbuilder")
+            // Command handler will create role in Keycloak and save to database
+            // clientId parameter is the Keycloak client ID (string), we need to parse it to Guid for local ClientId
+            if (!Guid.TryParse(clientId, out var clientIdGuid))
+            {
+                return BadRequest(new { message = _localizer["InvalidClientId"] });
+            }
+
             CreateRoleCommand command = new CreateRoleCommand();
             command.Name = request.Name;
             command.Description = request.Description;
             command.Realm = realm;
-            command.KeycloakClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
+            command.KeycloakClientId = clientId; // Keycloak client ID (string)
+            command.ClientId = clientIdGuid; // Local client ID (Guid, same as Keycloak ID now)
             
             var result = await _mediator.Send(command);
-            var response = StatusCode(result.StatusCode, result);
-            return response;
+            return StatusCode(result.StatusCode, result);
         }
         catch (Exception ex)
         {

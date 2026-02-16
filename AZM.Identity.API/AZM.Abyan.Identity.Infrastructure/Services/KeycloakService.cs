@@ -143,37 +143,72 @@ public class KeycloakService : IKeycloakService
     }
 
     #endregion
-
     public async Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        var adminToken = await GetAdminTokenAsync(cancellationToken);
+        var tokenEndpoint = $"/realms/{_config.Realm}/protocol/openid-connect/token"; // TO DO: Add Admin Realm and Client if client needed here
 
-        var userId = await GetUserIdAsync(username, adminToken, cancellationToken);
-        var clientWithRoles = await GetClientWithRolesAsync(userId, adminToken, cancellationToken);
+        var requestBody = new List<KeyValuePair<string, string>>
+        {
+            new("grant_type", "password"),
+            new("client_id", _config.ClientId),
+            new("username", username),
+            new("password", password)
+        };
 
-        if (clientWithRoles == null)
-            throw new Exception("User has no client roles");
+        if (!string.IsNullOrEmpty(_config.ClientSecret))
+        {
+            requestBody.Add(new KeyValuePair<string, string>("client_secret", _config.ClientSecret));
+        }
 
-        var clientSecret = await GetClientSecretAsync(
-            clientWithRoles.ClientInternalId,
-            adminToken,
-            cancellationToken);
+        var content = new FormUrlEncodedContent(requestBody);
+        var response = await _httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
 
-        var token = await GetTokenAsync(
-            username,
-            password,
-            clientWithRoles.ClientId,
-            clientSecret,
-            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException($"Keycloak authentication failed ({(int)response.StatusCode} {response.StatusCode}): {errorContent}");
+        }
+
+        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
 
         return new LoginResponse
         {
-            AccessToken = token.AccessToken,
-            RefreshToken = token.RefreshToken,
-            ExpiresIn = token.ExpiresIn,
-            TokenType = token.TokenType
+            AccessToken = tokenResponse?.AccessToken ?? string.Empty,
+            RefreshToken = tokenResponse?.RefreshToken ?? string.Empty,
+            ExpiresIn = tokenResponse?.ExpiresIn ?? 0,
+            TokenType = tokenResponse?.TokenType ?? "Bearer"
         };
     }
+    //public async Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default)
+    //{
+    //    var adminToken = await GetAdminTokenAsync(cancellationToken);
+
+    //    var userId = await GetUserIdAsync(username, adminToken, cancellationToken);
+    //    var clientWithRoles = await GetClientWithRolesAsync(userId, adminToken, cancellationToken);
+
+    //    if (clientWithRoles == null)
+    //        throw new Exception("User has no client roles");
+
+    //    var clientSecret = await GetClientSecretAsync(
+    //        clientWithRoles.ClientInternalId,
+    //        adminToken,
+    //        cancellationToken);
+
+    //    var token = await GetTokenAsync(
+    //        username,
+    //        password,
+    //        clientWithRoles.ClientId,
+    //        clientSecret,
+    //        cancellationToken);
+
+    //    return new LoginResponse
+    //    {
+    //        AccessToken = token.AccessToken,
+    //        RefreshToken = token.RefreshToken,
+    //        ExpiresIn = token.ExpiresIn,
+    //        TokenType = token.TokenType
+    //    };
+    //}
     private async Task<string> GetUserIdAsync(
       string username,
       string adminToken,

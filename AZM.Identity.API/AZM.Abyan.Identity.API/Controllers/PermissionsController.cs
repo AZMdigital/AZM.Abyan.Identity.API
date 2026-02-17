@@ -13,16 +13,10 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class PermissionsController : ControllerBase
+public class PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer)
-    {
-        _mediator = mediator;
-        _localizer = localizer;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     [HttpGet]
     public async Task<ActionResult<List<PermissionResponse>>> GetPermissions(string realm, string clientId, CancellationToken cancellationToken)

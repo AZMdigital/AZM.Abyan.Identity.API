@@ -1,26 +1,21 @@
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using System.Security.Claims;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
+[AllowAnonymous]
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(IAuthService authService, IUserService userService, IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly IUserService _userService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public AuthController(IAuthService authService, IUserService userService, IStringLocalizer<SharedResource> localizer)
-    {
-        _authService = authService;
-        _userService = userService;
-        _localizer = localizer;
-    }
+    private readonly IAuthService _authService = authService;
+    private readonly IUserService _userService = userService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)

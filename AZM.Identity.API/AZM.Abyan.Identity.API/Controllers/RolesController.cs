@@ -15,18 +15,11 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/[controller]")]
-public class RolesController : ControllerBase
+public class RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
-    private readonly IRoleService _roleService;
-    private readonly IMediator _mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
-    {
-        _roleService = roleService;
-        _mediator = mediator;
-        _localizer = localizer;
-    }
+    private readonly IRoleService _roleService = roleService;
+    private readonly IMediator _mediator = mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     [HttpGet("clients/{clientId}")]
     [AllowAnonymous]
@@ -61,7 +54,7 @@ public class RolesController : ControllerBase
             command.Realm = realm;
             command.KeycloakClientId = clientId; // Keycloak client ID (string)
             command.ClientId = clientIdGuid; // Local client ID (Guid, same as Keycloak ID now)
-            
+
             var result = await _mediator.Send(command);
             return StatusCode(result.StatusCode, result);
         }
@@ -79,7 +72,7 @@ public class RolesController : ControllerBase
             // Get role by name to find the local ID
             var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
-            
+
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
                 return NotFound(new { message = _localizer["RoleNotFound"] });
@@ -111,7 +104,7 @@ public class RolesController : ControllerBase
             // Get role by name to find the local ID
             var roles = await _roleService.GetClientRolesAsync(realm, clientId, cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
-            
+
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
                 return NotFound(new { message = _localizer["RoleNotFound"] });

@@ -12,18 +12,11 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class PoliciesController : ControllerBase
+public class PoliciesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    private readonly IKeycloakService _keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public PoliciesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer)
-    {
-        _mediator = mediator;
-        _keycloakService = keycloakService;
-        _localizer = localizer;
-    }
+    private readonly IMediator _mediator = mediator;
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     [HttpGet]
     public async Task<ActionResult> GetPolicies(string realm, string clientId, CancellationToken cancellationToken)

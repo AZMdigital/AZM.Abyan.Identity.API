@@ -1,11 +1,12 @@
-using System;
-using System.Reflection;
+using AZM.Abyan.Identity.API.Middleware;
+using AZM.Abyan.Identity.Application.Common.Interfaces;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
+using AZM.Abyan.Identity.Infrastructure.Security.Authorization;
 using AZM.Abyan.Identity.Infrastructure.Services;
 using AZM.Abyan.Identity.Persistence.DbContexts;
 using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
@@ -16,6 +17,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using System;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,16 +93,47 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
-    var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
-    var realm = keycloakSettings?.Realm ?? "Abyan";
+//builder.Services.AddAuthentication(options =>
+//{
+//    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+//    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+//})
+//.AddJwtBearer(options =>
+//{
+//    var keycloakSettings = builder.Configuration.GetSection("Keycloak").Get<KeycloakConfiguration>();
+//    var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
+//    var realm = keycloakSettings?.Realm ?? "Abyan";
+
+//    options.Authority = $"{keycloakUrl}/realms/{realm}";
+//    options.RequireHttpsMetadata = false;
+
+//        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+//        {
+//            ValidateIssuer = true,
+//            //ValidIssuer= $"{keycloakUrl}/realms/{realm}",
+//            ValidIssuers = new[]
+//            {
+//                $"{keycloakUrl}/realms/{realm}",
+//                $"{keycloakUrl}/realms/master"
+//            },
+//            ValidateAudience = true,
+//            AudienceValidator = (audiences, securityToken, validationParameters) =>
+//            {
+//                // allow any audience that contains "formbuilder"
+//                return audiences.Contains("formbuilder");
+//            },
+//            ValidateLifetime = true,
+//            NameClaimType = "preferred_username",
+//            RoleClaimType = "roles"
+//        };
+//    });
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var keycloakSettings = builder.Configuration.GetSection("Keycloak")
+            .Get<KeycloakConfiguration>();
+        var keycloakUrl = keycloakSettings?.BaseUrl ?? "http://localhost:8080";
+        var realm = keycloakSettings?.Realm ?? "Abyan";
 
         options.Authority = $"{keycloakUrl}/realms/{realm}";
         options.RequireHttpsMetadata = false;
@@ -107,13 +141,17 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuers = new[]
+            ValidIssuer = $"{keycloakUrl}/realms/{realm}",
+            ValidateAudience = true,
+            ValidAudience = "formbuilder", // for single audience fallback
+            ValidateLifetime = false,
+            ClockSkew = TimeSpan.FromMinutes(5),
+            NameClaimType = "preferred_username",
+            RoleClaimType = "roles",
+            AudienceValidator = (audiences, token, parameters) =>
             {
-                $"{keycloakUrl}/realms/{realm}",
-                $"{keycloakUrl}/realms/master"
-            },
-            ValidateAudience = false,
-            ValidateLifetime = true
+                return audiences.Contains("formbuilder");
+            }
         };
     });
 
@@ -170,7 +208,12 @@ builder.Services.AddScoped<IPolicySyncService, PolicySyncService>();
 builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
 builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
 builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
+builder.Services.AddScoped<ITenantProvider, JwtTenantProvider>();
+builder.Services.Configure<KeycloakOptions>(
+    builder.Configuration.GetSection("Keycloak"));
 
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
 #endregion
 
 var app = builder.Build();
@@ -204,9 +247,11 @@ app.UseRequestLocalization(localizationOptions);
 
 // Security
 app.UseAuthentication();
+app.UseMiddleware<UmaAuthorizationMiddleware>();
 app.UseAuthorization();
 
 // app.UseMiddleware<PermissionMiddleware>();
+
 
 app.MapControllers();
 

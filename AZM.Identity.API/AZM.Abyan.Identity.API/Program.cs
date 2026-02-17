@@ -170,65 +170,65 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // Keycloak configuration - using KeycloakFormbuilder as default application config
-builder.Services.Configure<KeycloakConfiguration>(
-    builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
-builder.Services.AddHttpContextAccessor();
+//builder.Services.Configure<KeycloakConfiguration>(
+//    builder.Configuration.GetSection("KeycloakConfigurations:Tenants:Abyan:KeycloakFormbuilder"));
+//builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddMemoryCache(options =>
-{
-    options.SizeLimit = 1024;
-    options.CompactionPercentage = 0.25;
-});
+//builder.Services.AddMemoryCache(options =>
+//{
+//    options.SizeLimit = 1024;
+//    options.CompactionPercentage = 0.25;
+//});
 
-// HttpClient
-builder.Services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
-{
-    var config = sp.GetRequiredService<IOptions<KeycloakConfiguration>>().Value;
-    client.BaseAddress = new Uri(config.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(5);
-});
+//// HttpClient
+//builder.Services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
+//{
+//    var config = sp.GetRequiredService<IOptions<KeycloakConfiguration>>().Value;
+//    client.BaseAddress = new Uri(config.BaseUrl);
+//    client.Timeout = TimeSpan.FromSeconds(5);
+//});
 
-// Application Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IClientService, ClientService>();
-builder.Services.AddScoped<IGroupService, GroupService>();
-builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IRealmResolverService, RealmResolverService>();
+//// Application Services
+//builder.Services.AddScoped<IAuthService, AuthService>();
+//builder.Services.AddScoped<IUserService, UserService>();
+//builder.Services.AddScoped<IRoleService, RoleService>();
+//builder.Services.AddScoped<IClientService, ClientService>();
+//builder.Services.AddScoped<IGroupService, GroupService>();
+//builder.Services.AddScoped<IRealmAdminService, RealmAdminService>();
+//builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+//builder.Services.AddScoped<IPermissionSyncService, PermissionSyncService>();
+//builder.Services.AddScoped<IClientRepository, ClientRepository>();
+//builder.Services.AddScoped<IRealmResolverService, RealmResolverService>();
 
-// Generic Repositories
-builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
-builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
+//// Generic Repositories
+//builder.Services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
+//builder.Services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
 
-// Sync Services
-builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();
-builder.Services.AddScoped<IUserSyncService, UserSyncService>();
-builder.Services.AddScoped<IClientSyncService, ClientSyncService>();
-builder.Services.AddScoped<IRoleSyncService, RoleSyncService>();
-builder.Services.AddScoped<IScopeSyncService, ScopeSyncService>();
-builder.Services.AddScoped<IResourceSyncService, ResourceSyncService>();
-builder.Services.AddScoped<IPolicySyncService, PolicySyncService>();
-builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
-builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
-builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
-builder.Services.AddScoped<ITenantProvider, JwtTenantProvider>();
-builder.Services.Configure<KeycloakOptions>(
-    builder.Configuration.GetSection("Keycloak"));
+//// Sync Services
+//builder.Services.AddScoped<ITenantSyncService, TenantSyncService>();
+//builder.Services.AddScoped<IUserSyncService, UserSyncService>();
+//builder.Services.AddScoped<IClientSyncService, ClientSyncService>();
+//builder.Services.AddScoped<IRoleSyncService, RoleSyncService>();
+//builder.Services.AddScoped<IScopeSyncService, ScopeSyncService>();
+//builder.Services.AddScoped<IResourceSyncService, ResourceSyncService>();
+//builder.Services.AddScoped<IPolicySyncService, PolicySyncService>();
+//builder.Services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
+//builder.Services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
+//builder.Services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
+//builder.Services.AddScoped<ITenantProvider, JwtTenantProvider>();
+//builder.Services.Configure<KeycloakOptions>(
+//    builder.Configuration.GetSection("Keycloak"));
 
-builder.Services.AddMemoryCache();
-builder.Services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
-#endregion
+//builder.Services.AddMemoryCache();
+//builder.Services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
+//#endregion
 
     var app = builder.Build();
 

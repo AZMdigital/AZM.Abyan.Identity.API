@@ -1,17 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AZM.Abyan.Identity.Application.Common.Interfaces;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Interfaces;
+using AZM.Abyan.Identity.Infrastructure.Security.Authorization;
 using AZM.Abyan.Identity.Infrastructure.Services;
 using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
 using AZM.Abyan.Identity.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace AZM.Abyan.Identity.Infrastructure.Common
 {
@@ -54,7 +56,9 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             // KeycloakConfigurations binding - binds the entire KeycloakConfigurations section
             services.Configure<KeycloakConfigurations>(
                 configuration.GetSection("KeycloakConfigurations"));
-            
+
+            services.Configure<KeycloakOptions>(
+                configuration.GetSection("Keycloak"));
             // Application Services
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
@@ -76,7 +80,9 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
             services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
             services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
+            services.AddScoped<ITenantProvider, JwtTenantProvider>();
 
+            services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
             // HttpClient
             services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
             {

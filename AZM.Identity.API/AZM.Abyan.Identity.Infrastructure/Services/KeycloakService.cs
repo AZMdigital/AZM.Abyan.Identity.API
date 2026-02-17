@@ -709,7 +709,6 @@ public class KeycloakService : IKeycloakService
 
         response.EnsureSuccessStatusCode();
     }
-
     public async Task UpdateClientRoleAsync(string realm, string clientId, string roleName, UpdateClientRoleRequest request, string adminToken, CancellationToken cancellationToken = default)
     {
         var endpoint = $"/admin/realms/{realm}/clients/{clientId}/roles/{roleName}";
@@ -717,7 +716,8 @@ public class KeycloakService : IKeycloakService
         var role = new
         {
             name = request.Name,
-            description = request.Description
+            description = request.Description,
+            attributes = request.Attributes ?? new Dictionary<string, string[]>()
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(role);

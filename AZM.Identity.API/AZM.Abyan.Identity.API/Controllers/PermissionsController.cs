@@ -18,10 +18,16 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer) : ControllerBase
+public class PermissionsController : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
+    private readonly IMediator _mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer;
+
+    public PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer)
+    {
+        _mediator = mediator;
+        _localizer = localizer;
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<PermissionResponse>>> GetPermissions(string realm, Guid clientId, CancellationToken cancellationToken)
@@ -76,26 +82,21 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     {
         try
         {
-            if (!Guid.TryParse(clientId, out var clientIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidClientId"] });
-            }
-
-            // Command handler will create permission in Keycloak and save to database
+            // clientId parameter is the Keycloak client string ID (e.g., "formbuilder")
+            // Command handler will create permission as role in Keycloak and save to database
             CreatePermissionCommand command = new CreatePermissionCommand
             {
                 Name = request.Name,
                 Description = request.Description,
-                ScopeId = request.ScopeId,
-                ResourceId = request.ResourceId,
-                PolicyId = request.PolicyId,
-                ClientId = clientIdGuid, // Local client ID (Guid, same as Keycloak ID now)
+                Controller = request.Controller,
+                Action = request.Action,
                 RealmName = realm,
                 ClientId = clientId // Keycloak client string ID (e.g., "formbuilder")
             };
 
             var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
+            var response = StatusCode(result.StatusCode, result);
+            return response;
         }
         catch (Exception ex)
         {
@@ -162,7 +163,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
             var command = new AssignClientPermissionToUserCommand
             {
                 AssignPermissionRequest = request,
-                Realm = realm,                
+                Realm = realm,
             };
 
             var result = await _mediator.Send(command, cancellationToken);

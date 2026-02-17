@@ -16,11 +16,18 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/[controller]")]
-public class RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer) : ControllerBase
+public class RolesController : ControllerBase
 {
-    private readonly IRoleService _roleService = roleService;
-    private readonly IMediator _mediator = mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
+    private readonly IRoleService _roleService;
+    private readonly IMediator _mediator;
+    private readonly IStringLocalizer<SharedResource> _localizer;
+
+    public RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
+    {
+        _roleService = roleService;
+        _mediator = mediator;
+        _localizer = localizer;
+    }
 
     [HttpGet("clients/{clientId}")]
     [AllowAnonymous]
@@ -42,21 +49,16 @@ public class RolesController(IRoleService roleService, IMediator mediator, IStri
     {
         try
         {
-            // Command handler will create role in Keycloak and save to database
-            // clientId parameter is the Keycloak client ID (string), we need to parse it to Guid for local ClientId
-            if (!Guid.TryParse(clientId, out var clientIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidClientId"] });
-            }
-
+            // clientId parameter is the Keycloak client string ID (e.g., "formbuilder")
             CreateRoleCommand command = new CreateRoleCommand();
             command.Name = request.Name;
             command.Description = request.Description;
             command.Realm = realm;
             command.ClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
-            
+
             var result = await _mediator.Send(command);
-            return StatusCode(result.StatusCode, result);
+            var response = StatusCode(result.StatusCode, result);
+            return response;
         }
         catch (Exception ex)
         {

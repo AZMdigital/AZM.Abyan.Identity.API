@@ -72,7 +72,7 @@ public class UserService : IUserService
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
         return await _keycloakService.GetUserByUsernameAsync(username, adminToken, cancellationToken);
     }
-  
+
 
     public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, string accessToken, CancellationToken cancellationToken = default)
     {
@@ -105,12 +105,14 @@ public class UserService : IUserService
         var mappings = await _keycloakService.GetUserRoleMappingsAsync(userId, adminToken, cancellationToken);
 
         // Realm roles
-        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse{
-                         Id = r.Id,
-                         Name = r.Name,
-                         Description = r.Description,
-                         Composite = r.Composite,
-                         ContainerId = r.ContainerId}).ToList()
+        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            Composite = r.Composite,
+            ContainerId = r.ContainerId
+        }).ToList()
                          ?? new List<RealmRoleResponse>();
         // Client roles
         var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();

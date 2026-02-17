@@ -1,3 +1,5 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
@@ -70,9 +72,29 @@ public class UserService : IUserService
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
         return await _keycloakService.GetUserByUsernameAsync(username, adminToken, cancellationToken);
     }
+  
 
-    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, string accessToken, CancellationToken cancellationToken = default)
     {
+        // ===== Parse Organizations from JWT =====
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(accessToken);
+
+        var orgClaim = jwt.Claims.FirstOrDefault(c => c.Type == "Organization")?.Value;
+        var organizationSummaries = new List<OrganizationSummary>();
+        if (!string.IsNullOrEmpty(orgClaim))
+        {
+            var orgs = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, OrganizationInfo>>(orgClaim);
+            if (orgs != null)
+            {
+                organizationSummaries = orgs.Select(o => new OrganizationSummary
+                {
+                    Id = o.Value.id,
+                    Name = o.Key
+                }).ToList();
+            }
+        }
+        // ===== Admin token for user info & roles =====
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
         // Get user info
@@ -118,7 +140,8 @@ public class UserService : IUserService
             EmailVerified = user.EmailVerified,
             CreatedTimestamp = user.CreatedTimestamp,
             RealmRoles = realmRoles,
-            ClientRoles = clientRoles
+            ClientRoles = clientRoles,
+            Organizations = organizationSummaries
         };
     }
     public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)

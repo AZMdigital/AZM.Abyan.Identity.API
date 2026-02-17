@@ -82,38 +82,39 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // Try to get user ID from JWT token claims
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                        ?? User.FindFirst("sub")?.Value;
+            // ===== Get access token from Authorization header =====
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = _localizer["Unauthorized"] });
+            }
 
-            // If user ID not found, try to get username and look up user
+            // ===== Try to get user ID from JWT claims =====
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("sub")?.Value;
+
+            // If user ID not found, fallback: lookup by username
             if (string.IsNullOrEmpty(userId))
             {
                 var username = User.FindFirst("preferred_username")?.Value
-                             ?? User.FindFirst(ClaimTypes.Name)?.Value
-                             ?? User.Identity?.Name;
+                               ?? User.FindFirst(ClaimTypes.Name)?.Value
+                               ?? User.Identity?.Name;
 
                 if (string.IsNullOrEmpty(username))
-                {
                     return Unauthorized(new { message = _localizer["Unauthorized"] });
-                }
 
-                // Get user by username to get their ID
                 var user = await _userService.GetUserByUsernameAsync(username, cancellationToken);
                 if (user == null)
-                {
                     return NotFound(new { message = _localizer["UserNotFound"] });
-                }
 
                 userId = user.Id;
             }
 
-            var userInfo = await _userService.GetCurrentUserInfoAsync(userId, cancellationToken);
-            
+            // ===== Get full user info including Organizations from token =====
+            var userInfo = await _userService.GetCurrentUserInfoAsync(userId, token, cancellationToken);
+
             if (userInfo == null)
-            {
                 return NotFound(new { message = _localizer["UserNotFound"] });
-            }
 
             return Ok(userInfo);
         }
@@ -122,5 +123,6 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
+
 }
 

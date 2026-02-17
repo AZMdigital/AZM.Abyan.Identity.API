@@ -8,6 +8,7 @@ using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Interfaces;
 using AZM.Abyan.Identity.Infrastructure.Services;
 using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
+using AZM.Abyan.Identity.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -59,11 +60,13 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IClientService, ClientService>();
-            services.AddScoped<IGroupService, GroupService>();
+            services.AddScoped<IOrganizationService, OrganizationService>();
+            //services.AddScoped<IGroupService, GroupService>();
             services.AddScoped<IRealmAdminService, RealmAdminService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IPermissionSyncService, PermissionSyncService>();
             services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<ITenantRepository, TenantRepository>();
             services.AddScoped<IRealmResolverService, RealmResolverService>();
             // Sync Services
             services.AddScoped<ITenantSyncService, TenantSyncService>();

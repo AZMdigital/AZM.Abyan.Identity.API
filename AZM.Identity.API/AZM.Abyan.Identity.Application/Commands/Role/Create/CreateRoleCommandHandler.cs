@@ -96,27 +96,27 @@ public class CreateRoleCommandHandler(
         }
     }
 
-    private string? ResolveClientInternalId(string realm, string clientId)
-    {
-        // Find tenant configuration for the realm
-        if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
-        {
-            return null;
-        }
+    //private string? ResolveClientInternalId(string realm, string clientId)
+    //{
+    //    // Find tenant configuration for the realm
+    //    if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
+    //    {
+    //        return null;
+    //    }
 
-        // Check KeycloakFormbuilder
-        if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakFormbuilder.ClientInternalId;
-        }
+    //    // Check KeycloakFormbuilder
+    //    if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakFormbuilder.ClientInternalId;
+    //    }
 
-        // Check KeycloakWorkflow
-        if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakWorkflow.ClientInternalId;
-        }
+    //    // Check KeycloakWorkflow
+    //    if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakWorkflow.ClientInternalId;
+    //    }
 
-        return null;
-    }
+    //    return null;
+    //}
 }
 

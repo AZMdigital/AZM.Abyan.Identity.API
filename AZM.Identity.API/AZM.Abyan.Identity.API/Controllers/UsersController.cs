@@ -40,7 +40,7 @@ public class UsersController : ControllerBase
             command.Password = request.Password;
             command.Enabled = request.Enabled;
             command.EmailVerified = request.EmailVerified;
-            command.RealmName = request.RealmName; // Set RealmName from request
+            command.OrganizationName = request.OrganizationName; // Set RealmName from request
             
             var result = await _mediator.Send(command);
             return StatusCode(result.StatusCode, result);

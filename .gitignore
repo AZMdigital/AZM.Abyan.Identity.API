@@ -4,7 +4,11 @@
 
 /AZM.Identity.API/AZM.Abyan.Identity.API/appsettings.json
 /.vscode
+<<<<<<< Updated upstream
 /.gitignore
 /LocalPolicy/.vs/LocalPolicy/CopilotIndices/17.14.1431.25910
 /LocalPolicy/.vs/LocalPolicy/FileContentIndex
 /.gitignore
+=======
+/LocalPolicy/.vs/LocalPolicy
+>>>>>>> Stashed changes

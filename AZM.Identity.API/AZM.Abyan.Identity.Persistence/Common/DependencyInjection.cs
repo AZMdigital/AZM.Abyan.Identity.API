@@ -28,6 +28,10 @@ namespace AZM.Abyan.Identity.Persistence.Common
             services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<TenantUserPermission, Guid>, Repository<TenantUserPermission, Guid, IdentityDbContext>>();
+            // Added missing repositories
+            services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
             return services;
         }
     }

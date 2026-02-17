@@ -79,7 +79,13 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddScoped<IRoleSyncService, RoleSyncService>();
             services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
             services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
+            // Added missing sync services
+            services.AddScoped<IScopeSyncService, ScopeSyncService>();
+            services.AddScoped<IResourceSyncService, ResourceSyncService>();
+            services.AddScoped<IPolicySyncService, PolicySyncService>();
+            
             services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
+  
             services.AddScoped<ITenantProvider, JwtTenantProvider>();
 
             services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();

@@ -34,21 +34,7 @@ namespace AZM.Abyan.Identity.Infrastructure.Security.Authorization
             var method = context.Request.Method;
 
             // Normalize path to find the controller name (e.g. /api/Clients/GetClients -> res:clients)
-            var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            string? controllerName = null;
-            if (segments.Length > 0)
-            {
-                // Most routes start with /api, so the controller is the second segment
-                if (segments[0].Equals("api", StringComparison.OrdinalIgnoreCase) && segments.Length > 1)
-                {
-                    controllerName = segments[1];
-                }
-                else
-                {
-                    controllerName = segments[0];
-                }
-            }
-
+            var controllerName = context.Request.RouteValues["controller"]?.ToString();
             var resourceName = $"res:{controllerName?.ToLower()}";
 
             // Try to find the resource ID from the database using the mapped name

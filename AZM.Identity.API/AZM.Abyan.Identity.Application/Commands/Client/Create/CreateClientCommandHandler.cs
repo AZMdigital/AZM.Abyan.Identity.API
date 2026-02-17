@@ -45,7 +45,8 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
                 var createClientRequest = new CreateClientRequest
                 {
                     Name = request.Name,
-                    Description = request.Description ?? string.Empty
+                    Description = request.Description ?? string.Empty,
+                    RedirectUris=request.RedirectUris
                 };
 
                 var keycloakClientId = await _keycloakService.CreateClientAsync(request.RealmName, createClientRequest, adminToken, cancellationToken);
@@ -62,7 +63,12 @@ namespace AZM.Abyan.Identity.Application.Commands.Client.Create
                 };
 
                 await _repository.AddAsync(client, cancellationToken);
-
+                //var createMapperTenandid = await _keycloakService.CreateProtocolMapperAsync(request.RealmName, client.Id.ToString(), request.Name, new DTOs.ProtocolMappers.CreateProtocolMapperRequest
+                //{
+                //    Name = request.Name,
+                //    TokenClaimName = "TenantId",
+                //    ClaimValue = client.Id.ToString()
+                //}, adminToken, cancellationToken);
                 return Result<Guid>.Created(client.Id, _localizer["ClientCreatedSuccessfully"]);
             }
             catch (Exception ex)

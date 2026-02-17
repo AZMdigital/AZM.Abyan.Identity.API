@@ -43,43 +43,42 @@ public class RemoveClientRoleFromUserCommandHandler(
             {
                 return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
             }
+                // Get role by name and clientId from database
+                var role = await _roleRepository
+                    .GetWhere(r => r.Name == request.AssignRoleRequest.RoleName && r.ClientId == clientIdGuid)
+                    .FirstOrDefaultAsync(cancellationToken);
 
-            // Get role by name and clientId from database
-            var role = await _roleRepository
-                .GetWhere(r => r.Name == request.AssignRoleRequest.RoleName && r.ClientId == clientIdGuid)
-                .FirstOrDefaultAsync(cancellationToken);
-            
-            if (role == null)
-            {
-                return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? $"Role '{request.AssignRoleRequest.RoleName}' not found for client '{request.AssignRoleRequest.ClientId}'");
-            }
+                if (role == null)
+                {
+                    return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? $"Role '{request.AssignRoleRequest.RoleName}' not found for client '{request.AssignRoleRequest.ClientId}'");
+                }
 
-            // Find existing assignment
-            var existingAssignment = await _tenantUserRoleRepository
-                .GetWhere(tur => tur.UserId == userId && tur.RoleId == role.Id && tur.TenantId == tenantId.Value)
-                .FirstOrDefaultAsync(cancellationToken);
+                // Find existing assignment
+                var existingAssignment = await _tenantUserRoleRepository
+                    .GetWhere(tur => tur.UserId == userId && tur.RoleId == role.Id && tur.TenantId == tenantId.Value)
+                    .FirstOrDefaultAsync(cancellationToken);
 
-            if (existingAssignment == null)
-            {
-                return Result<bool>.NotFound(_localizer["RoleAssignmentNotFound"] ?? "Role assignment not found");
-            }
+                if (existingAssignment == null)
+                {
+                    return Result<bool>.NotFound(_localizer["RoleAssignmentNotFound"] ?? "Role assignment not found");
+                }
 
-            // Remove role from Keycloak first
-            var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            await _keycloakService.RemoveClientRoleFromUserAsync(
-                request.Realm,
-                request.AssignRoleRequest.UserId,
-                request.AssignRoleRequest.ClientId,
-                request.AssignRoleRequest.RoleName,
-                adminToken,
-                cancellationToken);
+                // Remove role from Keycloak first
+                var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+                await _keycloakService.RemoveClientRoleFromUserAsync(
+                    request.Realm,
+                    request.AssignRoleRequest.UserId,
+                    request.AssignRoleRequest.ClientId,
+                    request.AssignRoleRequest.RoleName,
+                    adminToken,
+                    cancellationToken);
 
-            // Soft delete assignment from TenantUserRole table
-            existingAssignment.SoftDelete();
-            _tenantUserRoleRepository.Update(existingAssignment);
-            await _tenantUserRoleRepository.SaveChangesAsync(cancellationToken);
+                // Soft delete assignment from TenantUserRole table
+                existingAssignment.SoftDelete();
+                _tenantUserRoleRepository.Update(existingAssignment);
+                await _tenantUserRoleRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Deleted(true, _localizer["RoleRemovedSuccessfully"] ?? "Role removed successfully");
+                return Result<bool>.Deleted(true, _localizer["RoleRemovedSuccessfully"] ?? "Role removed successfully"); 
         }
         catch (Exception ex)
         {

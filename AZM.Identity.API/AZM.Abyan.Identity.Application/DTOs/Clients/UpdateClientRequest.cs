@@ -18,7 +18,6 @@ public class UpdateClientRequest
     public bool BearerOnly { get; set; }
     [JsonIgnore]
     public bool ServiceAccountsEnabled { get; set; }
-    [JsonIgnore]
     public List<string> RedirectUris { get; set; } = new();
     [JsonIgnore]
     public List<string> WebOrigins { get; set; } = new();

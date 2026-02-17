@@ -1,7 +1,12 @@
+using AZM.Abyan.Identity.Application.Commands.Permission.Assign;
 using AZM.Abyan.Identity.Application.Commands.Permission.Create;
 using AZM.Abyan.Identity.Application.Commands.Permission.Delete;
+using AZM.Abyan.Identity.Application.Commands.Permission.Unassign;
 using AZM.Abyan.Identity.Application.Commands.Permission.Update;
+using AZM.Abyan.Identity.Application.Commands.Role.Assign;
+using AZM.Abyan.Identity.Application.Commands.Role.Unassign;
 using AZM.Abyan.Identity.Application.DTOs.Permissions;
+using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissionById;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissions;
 using AZM.Abyan.Identity.Application.Resources;
@@ -19,18 +24,18 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     [HttpGet]
-    public async Task<ActionResult<List<PermissionResponse>>> GetPermissions(string realm, string clientId, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<PermissionResponse>>> GetPermissions(string realm, Guid clientId, CancellationToken cancellationToken)
     {
         try
         {
-            if (!Guid.TryParse(clientId, out var clientIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidClientId"] });
-            }
+            //if (!Guid.TryParse(clientId, out var clientIdGuid))
+            //{
+            //    return BadRequest(new { message = _localizer["InvalidClientId"] });
+            //}
 
             var query = new GetPermissionsQuery
             {
-                ClientId = clientIdGuid
+                ClientId = clientId
             };
 
             var result = await _mediator.Send(query, cancellationToken);
@@ -43,7 +48,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     }
 
     [HttpGet("{permissionId}")]
-    public async Task<ActionResult<PermissionResponse>> GetPermissionById(string realm, string clientId, string permissionId, CancellationToken cancellationToken)
+    public async Task<ActionResult<PermissionResponse>> GetPermissionById(string realm, Guid clientId, string permissionId, CancellationToken cancellationToken)
     {
         try
         {
@@ -67,7 +72,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePermission(string realm, string clientId, [FromBody] CreatePermissionRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> CreatePermission(string realm, Guid clientId, [FromBody] CreatePermissionRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -86,7 +91,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
                 PolicyId = request.PolicyId,
                 ClientId = clientIdGuid, // Local client ID (Guid, same as Keycloak ID now)
                 RealmName = realm,
-                KeycloakClientId = clientId // Keycloak client ID (string)
+                ClientId = clientId // Keycloak client string ID (e.g., "formbuilder")
             };
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -99,7 +104,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     }
 
     [HttpPut("{permissionId}")]
-    public async Task<ActionResult> UpdatePermission(string realm, string clientId, string permissionId, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UpdatePermission(string realm, Guid clientId, string permissionId, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -111,7 +116,9 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
             var command = new UpdatePermissionCommand
             {
                 PermissionId = permissionIdGuid,
-                UpdatePermissionRequest = request
+                UpdatePermissionRequest = request,
+                RealmName = realm,
+                KeycloakClientId = clientId.ToString()
             };
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -124,7 +131,7 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
     }
 
     [HttpDelete("{permissionId}")]
-    public async Task<ActionResult> DeletePermission(string realm, string clientId, string permissionId, CancellationToken cancellationToken)
+    public async Task<ActionResult> DeletePermission(string realm, Guid clientId, string permissionId, CancellationToken cancellationToken)
     {
         try
         {
@@ -136,6 +143,47 @@ public class PermissionsController(IMediator mediator, IStringLocalizer<SharedRe
             var command = new DeletePermissionCommand
             {
                 PermissionId = permissionIdGuid
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
+        }
+    }
+    [HttpPost("assign")]
+    public async Task<ActionResult> AssignClientPermissionsToUser(string realm, Guid clientId, [FromBody] AssignPermissionRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            request.ClientId = clientId.ToString();
+            var command = new AssignClientPermissionToUserCommand
+            {
+                AssignPermissionRequest = request,
+                Realm = realm,                
+            };
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return StatusCode(result.StatusCode, result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
+        }
+    }
+
+    [HttpPost("unassign")]
+    public async Task<ActionResult> UnassignClientPermissionsFromUser(string realm, Guid clientId, [FromBody] AssignPermissionRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            request.ClientId = clientId.ToString();
+            var command = new RemoveClientPermissionFromUserCommand
+            {
+                AssignPermissionRequest = request,
+                Realm = realm
             };
 
             var result = await _mediator.Send(command, cancellationToken);

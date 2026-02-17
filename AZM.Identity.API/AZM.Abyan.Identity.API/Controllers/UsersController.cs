@@ -1,6 +1,7 @@
 using AZM.Abyan.Identity.Application.Commands.User.Create;
 using AZM.Abyan.Identity.Application.Commands.User.Delete;
 using AZM.Abyan.Identity.Application.Commands.User.Update;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
@@ -39,7 +40,7 @@ public class UsersController : ControllerBase
             command.Password = request.Password;
             command.Enabled = request.Enabled;
             command.EmailVerified = request.EmailVerified;
-            command.RealmName = request.RealmName; // Set RealmName from request
+            command.OrganizationName = request.OrganizationName; // Set RealmName from request
             
             var result = await _mediator.Send(command);
             return StatusCode(result.StatusCode, result);
@@ -132,32 +133,51 @@ public class UsersController : ControllerBase
     //    }
     //}
 
-    //[HttpPut("{id}/reset-password")]
-    //public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
-    //{
-    //    try
-    //    {
-    //        await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
-    //        return Ok(new { message = $"Password for user {id} reset successfully" });
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return BadRequest(new { message = ex.Message });
-    //    }
-    //}
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var sent = await _userService.ForgotPasswordAsync(request, cancellationToken);
 
-    //[HttpPut("{id}/send-verify-email")]
-    //public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
-    //{
-    //    try
-    //    {
-    //        await _userService.SendVerifyEmailAsync(id, cancellationToken);
-    //        return Ok(new { message = $"Verification email sent to user {id} successfully" });
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return BadRequest(new { message = ex.Message });
-    //    }
-    //}
+            if (!sent)
+            {
+                return NotFound(new { message = _localizer["UserNotFound"] });
+            }
+
+            return Ok(new { message = _localizer["OperationSuccess"] ?? "Reset password email sent" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
+        }
+    }
+    [HttpPut("{id}/reset-password")]
+    public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
+            return Ok(new { message = $"Password for user {id} reset successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/send-verify-email")]
+    public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.SendVerifyEmailAsync(id, cancellationToken);
+            return Ok(new { message = $"Verification email sent to user {id} successfully" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
 

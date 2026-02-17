@@ -338,6 +338,53 @@ namespace AZM.Abyan.Identity.Persistence.Migrations
                     b.ToTable("Tenants");
                 });
 
+            modelBuilder.Entity("AZM.Abyan.Identity.Domain.Entities.TenantUserPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TenantUserPermissions");
+                });
+
             modelBuilder.Entity("AZM.Abyan.Identity.Domain.Entities.TenantUserRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -507,6 +554,29 @@ namespace AZM.Abyan.Identity.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("AZM.Abyan.Identity.Domain.Entities.TenantUserPermission", b =>
+                {
+                    b.HasOne("AZM.Abyan.Identity.Domain.Entities.Permission", "permission")
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AZM.Abyan.Identity.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId");
+
+                    b.HasOne("AZM.Abyan.Identity.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
+
+                    b.Navigation("permission");
                 });
 
             modelBuilder.Entity("AZM.Abyan.Identity.Domain.Entities.TenantUserRole", b =>

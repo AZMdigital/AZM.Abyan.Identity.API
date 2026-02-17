@@ -1,3 +1,6 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
@@ -69,33 +72,63 @@ public class UserService : IUserService
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
         return await _keycloakService.GetUserByUsernameAsync(username, adminToken, cancellationToken);
     }
+  
 
-    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, string accessToken, CancellationToken cancellationToken = default)
     {
-        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-        
-        // Get user info
-        var user = await _keycloakService.GetUserByIdAsync(userId, adminToken, cancellationToken);
-        if (user == null)
-            return null;
+        // ===== Parse Organizations from JWT =====
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(accessToken);
 
-        // Get realm roles
-        var realmRoles = await _keycloakService.GetUserRealmRolesAsync(userId, adminToken, cancellationToken);
-
-        // Get all clients and their roles for the user
-        var realm = _keycloakConfig.Realm;
-        var clients = await _keycloakService.GetClientsAsync(realm, adminToken, cancellationToken);
-        var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
-
-        foreach (var client in clients)
+        var orgClaim = jwt.Claims.FirstOrDefault(c => c.Type == "Organization")?.Value;
+        var organizationSummaries = new List<OrganizationSummary>();
+        if (!string.IsNullOrEmpty(orgClaim))
         {
-            var roles = await _keycloakService.GetUserClientRolesAsync(userId, client.Id.ToString(), adminToken, cancellationToken);
-            if (roles.Any())
+            var orgs = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, OrganizationInfo>>(orgClaim);
+            if (orgs != null)
             {
-                clientRoles[client.ClientId] = roles;
+                organizationSummaries = orgs.Select(o => new OrganizationSummary
+                {
+                    Id = o.Value.id,
+                    Name = o.Key
+                }).ToList();
             }
         }
+        // ===== Admin token for user info & roles =====
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
+        // Get user info
+        var user = await _keycloakService.GetUserByIdAsync(userId, adminToken, cancellationToken);
+        if (user == null) return null;
+
+        // Get all role mappings (realm + client)
+        var mappings = await _keycloakService.GetUserRoleMappingsAsync(userId, adminToken, cancellationToken);
+
+        // Realm roles
+        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse{
+                         Id = r.Id,
+                         Name = r.Name,
+                         Description = r.Description,
+                         Composite = r.Composite,
+                         ContainerId = r.ContainerId}).ToList()
+                         ?? new List<RealmRoleResponse>();
+        // Client roles
+        var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
+        if (mappings.ClientMappings != null)
+        {
+            foreach (var kvp in mappings.ClientMappings)
+            {
+                clientRoles[kvp.Key] = kvp.Value.Mappings;
+
+                // Optional: get attributes if needed
+                foreach (var role in kvp.Value.Mappings)
+                {
+                    role.Attributes = await _keycloakService.GetClientRoleAttributesAsync(
+                        kvp.Value.Id, role.Name, adminToken, cancellationToken);
+                }
+            }
+        }
+        // Return full user info
         return new UserInfoResponse
         {
             Id = user.Id,
@@ -107,8 +140,27 @@ public class UserService : IUserService
             EmailVerified = user.EmailVerified,
             CreatedTimestamp = user.CreatedTimestamp,
             RealmRoles = realmRoles,
-            ClientRoles = clientRoles
+            ClientRoles = clientRoles,
+            Organizations = organizationSummaries
         };
+    }
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            return false;
+        }
+
+        var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
+        var user = await _keycloakService.GetUserByUsernameAsync(request.Username, adminToken, cancellationToken);
+
+        if (user == null)
+        {
+            return false;
+        }
+
+        await _keycloakService.SendResetPasswordEmailAsync(user.Id, adminToken, cancellationToken);
+        return true;
     }
 }
 

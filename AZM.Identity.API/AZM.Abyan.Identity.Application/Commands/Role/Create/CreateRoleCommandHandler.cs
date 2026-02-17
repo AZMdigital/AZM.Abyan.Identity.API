@@ -25,6 +25,19 @@ public class CreateRoleCommandHandler(
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
+            //// Resolve client internal ID from configuration
+            //var clientInternalId = ResolveClientInternalId(request.Realm, request.ClientId);
+            //if (string.IsNullOrEmpty(clientInternalId))
+            //{
+            //    return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.Realm}'");
+            //}
+
+            // Parse ClientInternalId to Guid for local ClientId
+            //if (!Guid.TryParse(clientInternalId, out var clientIdGuid))
+            //{
+            //    return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
+            //}
+
             // Create role in Keycloak first
             var createRoleRequest = new CreateClientRoleRequest
             {
@@ -32,10 +45,10 @@ public class CreateRoleCommandHandler(
                 Description = request.Description
             };
 
-            await _keycloakService.CreateClientRoleAsync(request.Realm, request.KeycloakClientId, createRoleRequest, adminToken, cancellationToken);
+            await _keycloakService.CreateClientRoleAsync(request.Realm, request.ClientId.ToString(), createRoleRequest, adminToken, cancellationToken);
 
             // Get the created role from Keycloak to get its ID
-            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.Realm, request.KeycloakClientId, adminToken, cancellationToken);
+            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.Realm, request.ClientId.ToString(), adminToken, cancellationToken);
             var createdRole = keycloakRoles.FirstOrDefault(r => r.Name == request.Name);
 
             if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))
@@ -50,7 +63,7 @@ public class CreateRoleCommandHandler(
                 Id = keycloakRoleId,
                 Name = request.Name,
                 Description = request.Description,
-                ClientId = request.ClientId, // This is the Keycloak client ID (Guid)
+                ClientId = request.ClientId, // Use the resolved client internal ID (Guid)
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Guid.Empty
             };
@@ -65,5 +78,28 @@ public class CreateRoleCommandHandler(
             return Result<Guid>.Failure(ex.Message);
         }
     }
+
+    //private string? ResolveClientInternalId(string realm, string clientId)
+    //{
+    //    // Find tenant configuration for the realm
+    //    if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
+    //    {
+    //        return null;
+    //    }
+
+    //    // Check KeycloakFormbuilder
+    //    if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakFormbuilder.ClientInternalId;
+    //    }
+
+    //    // Check KeycloakWorkflow
+    //    if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakWorkflow.ClientInternalId;
+    //    }
+
+    //    return null;
+    //}
 }
 

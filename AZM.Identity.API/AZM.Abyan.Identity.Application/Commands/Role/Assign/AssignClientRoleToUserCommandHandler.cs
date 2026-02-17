@@ -1,3 +1,4 @@
+using System.Data;
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
@@ -56,26 +57,24 @@ public class AssignClientRoleToUserCommandHandler(
                 return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
             }
 
-            // Get role by name and clientId from database
+            // Get role by name and clientId from database    
             var role = await _roleRepository
-                .GetWhere(r => r.Name == request.AssignRoleRequest.RoleName && r.ClientId == clientIdGuid)
-                .FirstOrDefaultAsync(cancellationToken);
-            
+            .GetWhere(r => r.Name == request.AssignRoleRequest.RoleName && r.ClientId == clientIdGuid)
+            .FirstOrDefaultAsync(cancellationToken);
+
             if (role == null)
             {
                 return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? $"Role '{request.AssignRoleRequest.RoleName}' not found for client '{request.AssignRoleRequest.ClientId}'");
             }
-
             // Check if assignment already exists
             var existingAssignment = await _tenantUserRoleRepository
-                .GetWhere(tur => tur.UserId == userId && tur.RoleId == role.Id && tur.TenantId == tenantId.Value)
-                .FirstOrDefaultAsync(cancellationToken);
+            .GetWhere(tur => tur.UserId == userId && tur.RoleId == role.Id && tur.TenantId == tenantId.Value)
+            .FirstOrDefaultAsync(cancellationToken);
 
             if (existingAssignment != null)
             {
                 return Result<bool>.Conflict(_localizer["RoleAlreadyAssigned"] ?? "Role is already assigned to this user");
             }
-
             // Assign role in Keycloak first
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
             await _keycloakService.AssignClientRoleToUserAsync(
@@ -85,7 +84,6 @@ public class AssignClientRoleToUserCommandHandler(
                 request.AssignRoleRequest.RoleName,
                 adminToken,
                 cancellationToken);
-
             // Save assignment to TenantUserRole table
             var tenantUserRole = new TenantUserRole
             {
@@ -99,7 +97,6 @@ public class AssignClientRoleToUserCommandHandler(
 
             await _tenantUserRoleRepository.CreateAsync(tenantUserRole, cancellationToken);
             await _tenantUserRoleRepository.SaveChangesAsync(cancellationToken);
-
             return Result<bool>.Success(true, _localizer["RoleAssignedSuccessfully"] ?? "Role assigned successfully");
         }
         catch (Exception ex)

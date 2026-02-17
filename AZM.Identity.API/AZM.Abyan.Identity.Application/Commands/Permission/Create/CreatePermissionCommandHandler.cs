@@ -31,18 +31,18 @@ public class CreatePermissionCommandHandler(
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
-            // Get Scope, Resource, and Policy entities to get their IDs from Keycloak
-            var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
-            if (scope == null)
-            {
-                return Result<Guid>.Failure(_localizer["ScopeNotFound"] ?? $"Scope with ID {request.ScopeId} not found");
-            }
+            // Resolve client internal ID from configuration
+            //var clientInternalId = ResolveClientInternalId(request.RealmName, request.KeycloakClientId);
+            //if (string.IsNullOrEmpty(clientInternalId))
+            //{
+            //    return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.RealmName}'");
+            //}
 
-            var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
-            if (resource == null)
-            {
-                return Result<Guid>.Failure(_localizer["ResourceNotFound"] ?? $"Resource with ID {request.ResourceId} not found");
-            }
+            // Parse ClientInternalId to Guid for local ClientId
+            //if (!Guid.TryParse(request.ClientId, out var clientIdGuid))
+            //{
+            //    return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
+            //}
 
             var policy = await _policyRepository.GetByIdAsync(request.PolicyId, cancellationToken);
             if (policy == null)
@@ -63,15 +63,16 @@ public class CreatePermissionCommandHandler(
             // Note: The database IDs should already be the Keycloak IDs from the sync process
             var keycloakPermissionId = await _keycloakService.CreateScopePermissionAsync(
                 request.RealmName,
-                request.KeycloakClientId,
-                request.Name,
-                new[] { resource.Id.ToString() },  // ✅ Use resource ID (GUID as string)
-                new[] { scope.Id.ToString() },      // ✅ Use scope ID (GUID as string)
-                new[] { policy.Id.ToString() },     // ✅ Use policy ID (GUID as string)
+                request.ClientId.ToString(),
+                createRoleRequest,
                 adminToken,
                 cancellationToken);
 
-            if (string.IsNullOrEmpty(keycloakPermissionId) || !Guid.TryParse(keycloakPermissionId, out var keycloakPermissionIdGuid))
+            // Get the created role from Keycloak to get its ID
+            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.RealmName, request.ClientId.ToString(), adminToken, cancellationToken);
+            var createdRole = keycloakRoles.FirstOrDefault(r => r.Name == request.Name);
+
+            if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))
             {
                 return Result<Guid>.Failure(_localizer["FailedToCreatePermissionInKeycloak"] ?? "Failed to create permission in Keycloak or retrieve its ID");
             }

@@ -16,7 +16,6 @@ public class ClientResponse
     public bool PublicClient { get; set; }
     [JsonIgnore]
     public bool BearerOnly { get; set; }
-    [JsonIgnore]
     public List<string> RedirectUris { get; set; } = new();
     [JsonIgnore]
     public List<string> WebOrigins { get; set; } = new();

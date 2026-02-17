@@ -28,12 +28,12 @@ public class CreateUserCommandHandler(
             // Resolve RealmId from RealmName if provided
             Guid? realmId = null;
             Guid? tenantId = null;
-            if (!string.IsNullOrWhiteSpace(request.RealmName))
+            if (!string.IsNullOrWhiteSpace(request.OrganizationName))
             {
-                var resolvedRealmId = await _realmResolverService.ResolveRealmIdAsync(request.RealmName, cancellationToken);
+                var resolvedRealmId = await _realmResolverService.ResolveRealmIdAsync(request.OrganizationName, cancellationToken);
                 if (!resolvedRealmId.HasValue)
                 {
-                    return Result<Guid>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.RealmName}' not found");
+                    return Result<Guid>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.OrganizationName}' not found");
                 }
                 realmId = resolvedRealmId.Value;
                 tenantId = resolvedRealmId.Value; // Keep TenantId for backward compatibility
@@ -53,7 +53,8 @@ public class CreateUserCommandHandler(
                 LastName = request.LastName,
                 Password = request.Password,
                 Enabled = true,
-                EmailVerified =true
+                EmailVerified =true,
+                OrganizationName=request.OrganizationName
             };
 
             var keycloakUserIdString = await _keycloakService.CreateUserAsync(createUserRequest, adminToken, cancellationToken);

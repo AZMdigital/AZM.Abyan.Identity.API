@@ -43,6 +43,7 @@ public class ClientsController : ControllerBase
                     clientResponse.Name = client.Name;
                     clientResponse.Description = client.Description;
                     clientResponse.ClientId = client.ClientId;
+                    clientResponse.RedirectUris = client.RedirectUris;
                     var getId = await _mediator.Send(new GetClientByKeycloakIdQuery(client.Id));
                     clientResponse.Id = getId.Data;
                     Response.Add(clientResponse);
@@ -66,6 +67,7 @@ public class ClientsController : ControllerBase
             clientResponse.Name = client.Name;
             clientResponse.Description = client.Description;
             clientResponse.ClientId = client.ClientId;
+            clientResponse.RedirectUris = client.RedirectUris;
             var getId = await _mediator.Send(new GetClientByKeycloakIdQuery(client.Id));
             clientResponse.Id = getId.Data;
 
@@ -89,6 +91,7 @@ public class ClientsController : ControllerBase
             CreateClientCommand command = new CreateClientCommand();
             command.Name = request.Name;
             command.Description = request.Description;
+            command.RedirectUris = request.RedirectUris;
             command.RealmName = realm; // Use realm name from route parameter
             
             var result = await _mediator.Send(command);
@@ -101,12 +104,12 @@ public class ClientsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> UpdateClient(string realm, string id, [FromBody] UpdateClientRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> UpdateClient(string realm, Guid id, [FromBody] UpdateClientRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            await _clientService.UpdateClientAsync(realm, id, request, cancellationToken);
-            request.ClientId = id;
+            await _clientService.UpdateClientAsync(realm, id.ToString(), request, cancellationToken);
+            request.ClientId = id.ToString();
             var result = await _mediator.Send(new UpdateClientCommand(request));
             return Ok(new { message = _localizer["ClientUpdateSuccessfully"] });
         }

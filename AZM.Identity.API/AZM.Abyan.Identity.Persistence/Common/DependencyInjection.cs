@@ -1,0 +1,35 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using AZM.Abyan.Identity.Domain.Entities;
+using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
+using AZM.Abyan.Identity.Persistence.DbContexts;
+using AZM.Abyan.Identity.Persistence.Repositories.GenericRepository;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace AZM.Abyan.Identity.Persistence.Common
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            // DbContext
+            services.AddDbContext<IdentityDbContext>(options =>
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            // Generic Repositories
+            services.AddScoped<IRepository<Tenant, Guid>, Repository<Tenant, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<User, Guid>, Repository<User, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<Client, Guid>, Repository<Client, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<Role, Guid>, Repository<Role, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<Permission, Guid>, Repository<Permission, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<TenantUserRole, Guid>, Repository<TenantUserRole, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<TenantUserPermission, Guid>, Repository<TenantUserPermission, Guid, IdentityDbContext>>();
+            return services;
+        }
+    }
+}
+

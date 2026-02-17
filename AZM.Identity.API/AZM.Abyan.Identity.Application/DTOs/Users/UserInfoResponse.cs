@@ -14,5 +14,14 @@ public class UserInfoResponse
     public long CreatedTimestamp { get; set; }
     public List<RealmRoleResponse> RealmRoles { get; set; } = new();
     public Dictionary<string, List<ClientRoleResponse>> ClientRoles { get; set; } = new();
+    public List<OrganizationSummary> Organizations { get; set; } = new();
 }
-
+public class OrganizationSummary
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}
+public class OrganizationInfo
+{
+    public string id { get; set; } = string.Empty;
+}

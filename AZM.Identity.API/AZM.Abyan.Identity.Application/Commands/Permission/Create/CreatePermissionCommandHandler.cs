@@ -1,4 +1,4 @@
-using AZM.Abyan.Identity.Application.DTOs.Responses;
+﻿using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
@@ -31,7 +31,7 @@ public class CreatePermissionCommandHandler(
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
-            // Get Scope, Resource, and Policy entities to get their names for Keycloak
+            // Get Scope, Resource, and Policy entities to get their IDs from Keycloak
             var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
             if (scope == null)
             {
@@ -50,15 +50,24 @@ public class CreatePermissionCommandHandler(
                 return Result<Guid>.Failure(_localizer["PolicyNotFound"] ?? $"Policy with ID {request.PolicyId} not found");
             }
 
-            // Create permission in Keycloak first
-            // Keycloak needs resource names, scope names, and policy names
+            // Log the IDs we're using
+            Console.WriteLine($"Creating permission in Keycloak with:");
+            Console.WriteLine($"  Resource ID: {resource.Id}");
+            Console.WriteLine($"  Scope ID: {scope.Id}");
+            Console.WriteLine($"  Policy ID: {policy.Id}");
+            Console.WriteLine($"  Resource Name (for reference): {resource.Name}");
+            Console.WriteLine($"  Scope Name (for reference): {scope.Name}");
+            Console.WriteLine($"  Policy Name (for reference): {policy.Name}");
+
+            // Create permission in Keycloak using IDs from database (which should match Keycloak IDs)
+            // Note: The database IDs should already be the Keycloak IDs from the sync process
             var keycloakPermissionId = await _keycloakService.CreateScopePermissionAsync(
                 request.RealmName,
                 request.KeycloakClientId,
                 request.Name,
-                new[] { resource.Name },
-                new[] { scope.Name },
-                new[] { policy.Name },
+                new[] { resource.Id.ToString() },  // ✅ Use resource ID (GUID as string)
+                new[] { scope.Id.ToString() },      // ✅ Use scope ID (GUID as string)
+                new[] { policy.Id.ToString() },     // ✅ Use policy ID (GUID as string)
                 adminToken,
                 cancellationToken);
 
@@ -67,15 +76,18 @@ public class CreatePermissionCommandHandler(
                 return Result<Guid>.Failure(_localizer["FailedToCreatePermissionInKeycloak"] ?? "Failed to create permission in Keycloak or retrieve its ID");
             }
 
+            // Verify that the returned ID matches what we expect
+            Console.WriteLine($"Permission created in Keycloak with ID: {keycloakPermissionIdGuid}");
+
             // Create local entity with ID from Keycloak
             var permission = new Domain.Entities.Permission
             {
                 Id = keycloakPermissionIdGuid,
                 Name = request.Name,
                 Description = request.Description ?? string.Empty,
-                ScopeId = request.ScopeId,
-                ResourceId = request.ResourceId,
-                PolicyId = request.PolicyId,
+                ScopeId = request.ScopeId,        // Should match the Keycloak scope ID
+                ResourceId = request.ResourceId,  // Should match the Keycloak resource ID
+                PolicyId = request.PolicyId,      // Should match the Keycloak policy ID
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Guid.Empty
             };
@@ -87,8 +99,8 @@ public class CreatePermissionCommandHandler(
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error creating permission: {ex.Message}");
             return Result<Guid>.Failure(ex.Message);
         }
     }
 }
-

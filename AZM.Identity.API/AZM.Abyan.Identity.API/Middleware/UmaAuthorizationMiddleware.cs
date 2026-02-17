@@ -11,20 +11,9 @@ public sealed class UmaAuthorizationMiddleware(
 
     public async Task InvokeAsync(
         HttpContext context,
-        IUmaAuthorizationService authorizationService, ILogger<UmaAuthorizationMiddleware> logger)
+        IUmaAuthorizationService authorizationService)
     {
         var endpoint = context.GetEndpoint();
-
-
-        // Log authentication state
-        logger.LogInformation("User authenticated: {IsAuthenticated}",
-            context.User.Identity?.IsAuthenticated);
-
-        logger.LogInformation("User identity name: {Name}",
-            context.User.Identity?.Name);
-
-        logger.LogInformation("Headers: {Headers}",
-            context.Request.Headers.Authorization.ToString());
 
         if (IsPublic(context))
         {
@@ -38,8 +27,6 @@ public sealed class UmaAuthorizationMiddleware(
         }
         if (context.User.Identity?.IsAuthenticated is not true)
         {
-            logger.LogWarning("User is not authenticated");
-
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;
         }

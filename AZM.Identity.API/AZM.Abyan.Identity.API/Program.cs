@@ -144,7 +144,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = $"{keycloakUrl}/realms/{realm}",
             ValidateAudience = true,
             ValidAudience = "formbuilder", // for single audience fallback
-            ValidateLifetime = false,
+            ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(5),
             NameClaimType = "preferred_username",
             RoleClaimType = "roles",
@@ -247,7 +247,7 @@ app.UseRequestLocalization(localizationOptions);
 
 // Security
 app.UseAuthentication();
-app.UseMiddleware<UmaAuthorizationMiddleware>();
+//app.UseMiddleware<UmaAuthorizationMiddleware>();
 app.UseAuthorization();
 
 // app.UseMiddleware<PermissionMiddleware>();

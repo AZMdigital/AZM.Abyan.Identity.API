@@ -56,7 +56,7 @@ namespace AZM.Abyan.Identity.Infrastructure.Security.Authorization
                 .FirstOrDefaultAsync(r => r.Name == resourceName, cancellationToken);
             
             // If not found by name, try fallback or just the path as resource name
-            var resourceIdentifier = resource?.Id.ToString() ?? "93ac7baf-3556-4101-9719-5db623fa0060";
+            var resourceIdentifier = resource?.Id.ToString() ?? path;
 
             var permissionString = $"{resourceIdentifier}#{method}";
 
@@ -109,11 +109,6 @@ namespace AZM.Abyan.Identity.Infrastructure.Security.Authorization
             if (!response.IsSuccessStatusCode)
             {
                 var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                Console.WriteLine($"Keycloak UMA Error: {response.StatusCode}");
-                Console.WriteLine($"Error Details: {errorBody}");
-                Console.WriteLine($"Requested Permission: {permission}");
-                Console.WriteLine($"Audience: {_options.Audience}");
-                Console.WriteLine($"ClientId: {_options.ClientId}");
             }
 
             return response.IsSuccessStatusCode;

@@ -7,11 +7,11 @@ public class Permission : BaseEntity
     public required string Name { get; set; }
     public string? Description { get; set; }
 
-    // Format: api:{controller}:{action}
-    public Guid ScopeId { get; set; }
-    public Scope Scope { get; set; } = null!;
-    public Guid ResourceId { get; set; }
-    public Resource Resources { get; set; } = null!;
-    public Guid PolicyId { get; set; }
-    public Policy Policy { get; set; } = null!;
+    // Role-based permission model
+    // Permission is created as a role in Keycloak with custom attributes
+    public required string Controller { get; set; } // Mandatory: Controller name
+    public string? Action { get; set; } // Optional: Action name
+
+    // Note: Permission is stored as a role in Keycloak, so we reference the Role entity
+    // The role ID in Keycloak is the same as Permission ID
 }

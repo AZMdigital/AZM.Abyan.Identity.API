@@ -74,8 +74,8 @@ public static class PermissionDiscovery
                 permissions.Add(new Permission
                 {
                     Name = name,
-                    ResourceId =Guid.Parse(resource),
-                    ScopeId =Guid.Parse(action),
+                    Controller = resource, // Controller name
+                    Action = action, // Action name
                     Description = description
                 });
             }

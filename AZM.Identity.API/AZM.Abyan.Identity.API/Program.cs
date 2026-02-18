@@ -84,22 +84,22 @@ try
 
     #region Startup Tasks
 
-    using (var scope = app.Services.CreateScope())
-    {
-        var permissionSyncService = scope.ServiceProvider
-            .GetRequiredService<IPermissionSyncService>();
+    //using (var scope = app.Services.CreateScope())
+    //{
+    //    var permissionSyncService = scope.ServiceProvider
+    //        .GetRequiredService<IPermissionSyncService>();
 
-        try
-        {
-            await permissionSyncService
-                .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Failed to sync permissions on startup.");
-        }
-    }
+    //    try
+    //    {
+    //        await permissionSyncService
+    //            .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    //        logger.LogError(ex, "Failed to sync permissions on startup.");
+    //    }
+    //}
 
     #endregion
 

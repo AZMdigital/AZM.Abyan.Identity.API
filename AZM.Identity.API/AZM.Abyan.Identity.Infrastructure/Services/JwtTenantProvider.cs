@@ -8,7 +8,7 @@ public sealed class JwtTenantProvider : ITenantProvider
 {
     public string GetTenant(ClaimsPrincipal user)
     {
-        var organizationClaim = user.FindFirst("organization")
+        var organizationClaim = user.FindFirst("Organization")
             ?? throw new UnauthorizedAccessException("Missing organization claim.");
 
         using var document = JsonDocument.Parse(organizationClaim.Value);

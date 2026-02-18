@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using AZM.Abyan.Identity.API.Extensions;
+using AZM.Abyan.Identity.API.Middleware;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
@@ -74,7 +75,7 @@ try
     // Security
     app.UseAuthentication();
     app.UseAuthorization();
-    //app.UseMiddleware<UmaAuthorizationMiddleware>();
+    app.UseMiddleware<UmaAuthorizationMiddleware>();
 
     // app.UseMiddleware<PermissionMiddleware>();
 

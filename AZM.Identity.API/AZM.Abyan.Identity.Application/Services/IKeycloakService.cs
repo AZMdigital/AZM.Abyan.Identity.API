@@ -12,7 +12,7 @@ using AZM.Abyan.Identity.Application.DTOs.Users;
 namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IKeycloakService
-{
+{  
     // Auth
     Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
     Task<LoginResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
@@ -139,8 +139,13 @@ public interface IKeycloakService
     Task<PermissionDto?> GetPermissionAsync(string realm, string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default);
     Task<List<PermissionDto>> GetAllPermissionsAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task<string> CreateScopePermissionAsync(string realm, string clientId, string permissionName, IEnumerable<string> resources, IEnumerable<string> scopes, IEnumerable<string> policies, string adminToken, CancellationToken cancellationToken = default);
-
-
     Task<List<OrganizationDto>> GetUserOrganizationsAsync(string userId, string adminToken,CancellationToken cancellationToken);
+
+    // User-specific filtered data
+    Task<List<PermissionDto>> GetUserPermissionsAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<ScopeDto>> GetUserScopesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<ResourceDto>> GetUserResourcesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default);
+    Task<List<PolicyDto>> GetUserPoliciesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default);
+
 }
 

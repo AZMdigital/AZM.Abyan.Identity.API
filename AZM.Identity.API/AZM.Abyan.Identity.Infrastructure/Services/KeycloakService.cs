@@ -2328,7 +2328,42 @@ public class KeycloakService : IKeycloakService
         var updateResponse = await _httpClient.SendAsync(updateRequest, cancellationToken);
         updateResponse.EnsureSuccessStatusCode();
     }
+    public async Task<List<PermissionDto>> GetUserPermissionsAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var allPermissions = await GetAllPermissionsAsync(realm, clientId, adminToken, cancellationToken);
+        var userRoleMappings = await GetUserRoleMappingsAsync(userId, adminToken, cancellationToken);
+        var userRoles = new HashSet<string>((userRoleMappings?.RealmMappings?.Select(r => r.Name) ?? Enumerable.Empty<string>())
+            .Concat(userRoleMappings?.ClientMappings?.SelectMany(c => c.Value.Mappings.Select(r => r.Name)) ?? Enumerable.Empty<string>()));
+        // Filter permissions where any policy name matches a user role
+        // (Assumes policy names are role names, adjust if needed)
+        return allPermissions.Where(p =>
+            p.Policies.Any(policyName => userRoles.Contains(policyName))
+        ).ToList();
+    }
 
+    public async Task<List<ScopeDto>> GetUserScopesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var userPermissions = await GetUserPermissionsAsync(realm, clientId, userId, adminToken, cancellationToken);
+        var allScopes = await GetAllScopesAsync(realm, clientId, adminToken, cancellationToken);
+        var userScopeNames = userPermissions.SelectMany(p => p.Scopes).Distinct().ToHashSet();
+        return allScopes.Where(s => userScopeNames.Contains(s.Name)).ToList();
+    }
+
+    public async Task<List<ResourceDto>> GetUserResourcesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var userPermissions = await GetUserPermissionsAsync(realm, clientId, userId, adminToken, cancellationToken);
+        var allResources = await GetAllResourcesAsync(realm, clientId, adminToken, cancellationToken);
+        var userResourceNames = userPermissions.SelectMany(p => p.Resources).Distinct().ToHashSet();
+        return allResources.Where(r => userResourceNames.Contains(r.Name)).ToList();
+    }
+
+    public async Task<List<PolicyDto>> GetUserPoliciesAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default)
+    {
+        var userPermissions = await GetUserPermissionsAsync(realm, clientId, userId, adminToken, cancellationToken);
+        var allPolicies = await GetAllPoliciesAsync(realm, clientId, adminToken, cancellationToken);
+        var userPolicyNames = userPermissions.SelectMany(p => p.Policies).Distinct().ToHashSet();
+        return allPolicies.Where(p => userPolicyNames.Contains(p.Name)).ToList();
+    }
     private class TokenResponse
     {
         [JsonPropertyName("access_token")]

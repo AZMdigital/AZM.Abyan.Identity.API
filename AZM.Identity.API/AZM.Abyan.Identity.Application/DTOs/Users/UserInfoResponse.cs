@@ -16,6 +16,9 @@ public class UserInfoResponse
     public Dictionary<string, List<ClientRoleResponse>> ClientRoles { get; set; } = new();
     public List<OrganizationSummary> Organizations { get; set; } = new();
     public List<AZM.Abyan.Identity.Application.DTOs.AuthZ.PermissionDto> Permissions { get; set; } = new();
+    public List<AZM.Abyan.Identity.Application.DTOs.AuthZ.ScopeDto> Scopes { get; set; } = new();
+    public List<AZM.Abyan.Identity.Application.DTOs.AuthZ.ResourceDto> Resources { get; set; } = new();
+    public List<AZM.Abyan.Identity.Application.DTOs.AuthZ.PolicyDto> Policies { get; set; } = new();
 }
 public class OrganizationSummary
 {

@@ -1,104 +1,79 @@
 ﻿using AZM.Abyan.Identity.Application.Common.Interfaces;
+using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Persistence.DbContexts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 
 namespace AZM.Abyan.Identity.Infrastructure.Security.Authorization
 {
-    public sealed class KeycloakUmaAuthorizationService(
-     IHttpClientFactory httpClientFactory,
-     ITenantProvider tenantProvider,
-     IOptions<KeycloakOptions> options,
-     IMemoryCache cache,
-     IdentityDbContext dbContext)
-     : IUmaAuthorizationService
+public sealed class KeycloakUmaAuthorizationService(
+    IHttpClientFactory httpClientFactory,
+    ITenantProvider tenantProvider,
+    IOptions<KeycloakOptions> options,
+    IMemoryCache cache,
+    IdentityDbContext dbContext,
+    IUserService userService)
+    : IUmaAuthorizationService
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly ITenantProvider _tenantProvider = tenantProvider;
         private readonly KeycloakOptions _options = options.Value;
         private readonly IMemoryCache _cache = cache;
         private readonly IdentityDbContext _dbContext = dbContext;
+        private readonly IUserService _userService = userService;
 
         public async Task<bool> IsAuthorizedAsync(
             HttpContext context,
             string accessToken,
             CancellationToken cancellationToken)
         {
-            var tenant = _tenantProvider.GetTenant(context.User);
+            //var tenant = _tenantProvider.GetTenant(context.User);
 
-            var path = context.Request.Path.Value!;
-            var method = context.Request.Method;
-
-            // Normalize path to find the controller name (e.g. /api/Clients/GetClients -> res:clients)
             var controllerName = context.Request.RouteValues["controller"]?.ToString();
-            var resourceName = $"res:{controllerName?.ToLower()}";
+            var actionName = context.Request.RouteValues["action"]?.ToString();
+            var method = context.Request.Method;
+            var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? context.User.FindFirst("sub")?.Value;
 
-            // Try to find the resource ID from the database using the mapped name
-            var resource = await _dbContext.Resources
-                .FirstOrDefaultAsync(r => r.Name == resourceName, cancellationToken);
-            
-            // If not found by name, try fallback or just the path as resource name
-            var resourceIdentifier = resource?.Id.ToString() ?? path;
+            var username = context.User.FindFirst("preferred_username")?.Value
+                               ?? context.User.FindFirst(ClaimTypes.Name)?.Value
+                               ?? context.User.Identity?.Name;
+            if (string.IsNullOrEmpty(userId))
+                return false;
 
-            var permissionString = $"{resourceIdentifier}#{method}";
-
-            var cacheKey = $"{context.User.Identity?.Name}-{permissionString}";
-
-            if (_cache.TryGetValue(cacheKey, out bool cached))
-                return cached;
-
-            var result = await CallKeycloakAsync(
-                permissionString,
-                accessToken,
-                cancellationToken);
-
-            _cache.Set(cacheKey, result, TimeSpan.FromSeconds(20));
-
-            return result;
-        }
-
-        private async Task<bool> CallKeycloakAsync(
-            string permission,
-            string accessToken,
-            CancellationToken cancellationToken)
-        {
-            var client = _httpClientFactory.CreateClient();
-
-            using var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                $"{_options.Authority}/protocol/openid-connect/token");
-
-            var parameters = new Dictionary<string, string>
+            var cacheKey = $"{username}-permissions";
+            UserInfoResponse? userInfo = null;
+            if (!_cache.TryGetValue(cacheKey, out userInfo))
             {
-                ["grant_type"] = "urn:ietf:params:oauth:grant-type:uma-ticket",
-                ["audience"] = _options.Audience,
-                ["permission"] = permission
-            };
-
-            if (!string.IsNullOrEmpty(_options.ClientId))
-                parameters["client_id"] = _options.ClientId;
-
-            if (!string.IsNullOrEmpty(_options.ClientSecret))
-                parameters["client_secret"] = _options.ClientSecret;
-
-            request.Content = new FormUrlEncodedContent(parameters);
-
-            request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var response = await client.SendAsync(request, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                userInfo = await _userService.GetCurrentUserInfoAsync(userId, accessToken, cancellationToken);
+                if (userInfo != null)
+                {
+                    _cache.Set(cacheKey, userInfo, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20),
+                        Size = 1
+                    });
+                }
             }
+            if (userInfo == null)
+                return false;
 
-            return response.IsSuccessStatusCode;
+            // Check if any permission matches the controller and action
+            var hasPermission = userInfo.Permissions.Any(p =>
+                (p.Resources.Any(r => r.Contains(controllerName!, StringComparison.OrdinalIgnoreCase)) ||
+                 p.Name.Contains(controllerName!, StringComparison.OrdinalIgnoreCase)) &&
+                (p.Scopes.Any(s => s.Equals(actionName, StringComparison.OrdinalIgnoreCase) || s.Equals(method, StringComparison.OrdinalIgnoreCase))
+                 || p.Name.Contains(actionName ?? method, StringComparison.OrdinalIgnoreCase))
+            );
+            return hasPermission;
         }
+        // CallKeycloakAsync is no longer needed
     }
 
 }

@@ -1,10 +1,11 @@
-using System.Net.Http;
-using System.Net.Http.Headers;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -129,6 +130,14 @@ public class UserService : IUserService
                         kvp.Value.Id, role.Name, adminToken, cancellationToken);
                 }
             }
+        }
+        // Permissions: fetch from Keycloak
+        var permissions = new List<AZM.Abyan.Identity.Application.DTOs.AuthZ.PermissionDto>();
+        var clients = await _keycloakService.GetClientsAsync(_keycloakConfig.Realm, adminToken, cancellationToken);
+        var targetClient = clients.FirstOrDefault(c => c.ClientId == _keycloakConfig.ClientId);
+        if (targetClient != null)
+        {
+            permissions = await _keycloakService.GetAllPermissionsAsync(_keycloakConfig.Realm, targetClient.Id.ToString(), adminToken, cancellationToken);
         }
         // Return full user info
         return new UserInfoResponse

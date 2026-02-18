@@ -79,8 +79,8 @@ public class UserService : IUserService
         // ===== Parse Organizations from JWT =====
         var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(accessToken);
-
-        var orgClaim = jwt.Claims.FirstOrDefault(c => c.Type == "Organization")?.Value;
+      
+        var orgClaim = jwt.Claims.FirstOrDefault(c => c.Type == "AbyanOrganization" || c.Type=="Organization")?.Value;
         var organizationSummaries = new List<OrganizationSummary>();
         if (!string.IsNullOrEmpty(orgClaim))
         {

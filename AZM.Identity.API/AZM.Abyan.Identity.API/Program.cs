@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using AZM.Abyan.Identity.API.Extensions;
+using AZM.Abyan.Identity.API.Middleware;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
@@ -84,22 +85,22 @@ try
 
     #region Startup Tasks
 
-    using (var scope = app.Services.CreateScope())
-    {
-        var permissionSyncService = scope.ServiceProvider
-            .GetRequiredService<IPermissionSyncService>();
+    //using (var scope = app.Services.CreateScope())
+    //{
+    //    var permissionSyncService = scope.ServiceProvider
+    //        .GetRequiredService<IPermissionSyncService>();
 
-        try
-        {
-            await permissionSyncService
-                .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Failed to sync permissions on startup.");
-        }
-    }
+    //    try
+    //    {
+    //        await permissionSyncService
+    //            .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    //        logger.LogError(ex, "Failed to sync permissions on startup.");
+    //    }
+    //}
 
     #endregion
 

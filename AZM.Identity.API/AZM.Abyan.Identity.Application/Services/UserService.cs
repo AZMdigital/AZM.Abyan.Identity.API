@@ -1,10 +1,11 @@
-using System.Net.Http;
-using System.Net.Http.Headers;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -12,11 +13,13 @@ public class UserService : IUserService
 {
     private readonly IKeycloakService _keycloakService;
     private readonly KeycloakConfiguration _keycloakConfig;
+    private readonly IUserPermissionQueryService _userPermissionQueryService;
 
-    public UserService(IKeycloakService keycloakService, IOptions<KeycloakConfiguration> keycloakConfig)
+    public UserService(IKeycloakService keycloakService, IOptions<KeycloakConfiguration> keycloakConfig, IUserPermissionQueryService userPermissionQueryService)
     {
         _keycloakService = keycloakService;
         _keycloakConfig = keycloakConfig.Value;
+        _userPermissionQueryService = userPermissionQueryService;
     }
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
@@ -130,6 +133,11 @@ public class UserService : IUserService
                 }
             }
         }
+        // Permissions, Scopes, Resources, Policies: fetch only for the current user from the database via query service
+        var permissions = await _userPermissionQueryService.GetUserPermissionsAsync(userId, cancellationToken);
+        //var policies = await _userPermissionQueryService.GetUserPoliciesAsync(userId, cancellationToken);
+        //var resources = await _userPermissionQueryService.GetUserResourcesAsync(userId, cancellationToken);
+        //var scopes = await _userPermissionQueryService.GetUserScopesAsync(userId, cancellationToken);
         // Return full user info
         return new UserInfoResponse
         {
@@ -143,9 +151,15 @@ public class UserService : IUserService
             CreatedTimestamp = user.CreatedTimestamp,
             RealmRoles = realmRoles,
             ClientRoles = clientRoles,
-            Organizations = organizationSummaries
+            Organizations = organizationSummaries,
+            Permissions = permissions
+            //,
+            //Scopes = scopes,
+            //Resources = resources,
+            //Policies = policies
         };
     }
+
     public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Username))

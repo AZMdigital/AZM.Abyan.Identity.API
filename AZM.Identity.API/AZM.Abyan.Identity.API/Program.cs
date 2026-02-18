@@ -75,7 +75,7 @@ try
     // Security
     app.UseAuthentication();
     app.UseAuthorization();
-    app.UseMiddleware<UmaAuthorizationMiddleware>();
+    //app.UseMiddleware<UmaAuthorizationMiddleware>();
 
     // app.UseMiddleware<PermissionMiddleware>();
 

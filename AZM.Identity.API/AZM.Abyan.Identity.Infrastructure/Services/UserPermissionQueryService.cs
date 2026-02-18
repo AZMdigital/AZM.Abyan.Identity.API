@@ -16,13 +16,15 @@ public class UserPermissionQueryService : IUserPermissionQueryService
     public async Task<List<PermissionDto>> GetUserPermissionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         var userGuid = Guid.Parse(userId);
-        var userPermissionIds = await _dbContext.TenantUserPermissions
-            .Where(tup => tup.UserId == userGuid)
-            .Select(tup => tup.PermissionId)
+        // Get user's role IDs
+        var userRoleIds = await _dbContext.TenantUserRoles
+            .Where(tur => tur.UserId == userGuid)
+            .Select(tur => tur.RoleId)
             .ToListAsync(cancellationToken);
 
+        // Get permissions where Permission.Policy.RoleId is in user's roles
         return await _dbContext.Permissions
-            .Where(p => userPermissionIds.Contains(p.Id))
+            .Where(p => userRoleIds.Contains(p.Policy.RoleId))
             .Select(p => new PermissionDto
             {
                 Id = p.Id.ToString(),
@@ -40,17 +42,12 @@ public class UserPermissionQueryService : IUserPermissionQueryService
     public async Task<List<PolicyDto>> GetUserPoliciesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var userGuid = Guid.Parse(userId);
-        var userPermissionIds = await _dbContext.TenantUserPermissions
-            .Where(tup => tup.UserId == userGuid)
-            .Select(tup => tup.PermissionId)
-            .ToListAsync(cancellationToken);
-        var policyIds = await _dbContext.Permissions
-            .Where(p => userPermissionIds.Contains(p.Id))
-            .Select(p => p.PolicyId)
-            .Distinct()
+        var userRoleIds = await _dbContext.TenantUserRoles
+            .Where(tur => tur.UserId == userGuid)
+            .Select(tur => tur.RoleId)
             .ToListAsync(cancellationToken);
         return await _dbContext.Policies
-            .Where(pol => policyIds.Contains(pol.Id))
+            .Where(pol => userRoleIds.Contains(pol.RoleId))
             .Select(pol => new PolicyDto
             {
                 Id = pol.Id.ToString(),
@@ -66,12 +63,12 @@ public class UserPermissionQueryService : IUserPermissionQueryService
     public async Task<List<ResourceDto>> GetUserResourcesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var userGuid = Guid.Parse(userId);
-        var userPermissionIds = await _dbContext.TenantUserPermissions
-            .Where(tup => tup.UserId == userGuid)
-            .Select(tup => tup.PermissionId)
+        var userRoleIds = await _dbContext.TenantUserRoles
+            .Where(tur => tur.UserId == userGuid)
+            .Select(tur => tur.RoleId)
             .ToListAsync(cancellationToken);
         var resourceIds = await _dbContext.Permissions
-            .Where(p => userPermissionIds.Contains(p.Id))
+            .Where(p => userRoleIds.Contains(p.Policy.RoleId))
             .Select(p => p.ResourceId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -94,12 +91,12 @@ public class UserPermissionQueryService : IUserPermissionQueryService
     public async Task<List<ScopeDto>> GetUserScopesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var userGuid = Guid.Parse(userId);
-        var userPermissionIds = await _dbContext.TenantUserPermissions
-            .Where(tup => tup.UserId == userGuid)
-            .Select(tup => tup.PermissionId)
+        var userRoleIds = await _dbContext.TenantUserRoles
+            .Where(tur => tur.UserId == userGuid)
+            .Select(tur => tur.RoleId)
             .ToListAsync(cancellationToken);
         var scopeIds = await _dbContext.Permissions
-            .Where(p => userPermissionIds.Contains(p.Id))
+            .Where(p => userRoleIds.Contains(p.Policy.RoleId))
             .Select(p => p.ScopeId)
             .Distinct()
             .ToListAsync(cancellationToken);

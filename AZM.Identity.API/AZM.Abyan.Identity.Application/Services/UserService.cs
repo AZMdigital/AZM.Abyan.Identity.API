@@ -135,9 +135,9 @@ public class UserService : IUserService
         }
         // Permissions, Scopes, Resources, Policies: fetch only for the current user from the database via query service
         var permissions = await _userPermissionQueryService.GetUserPermissionsAsync(userId, cancellationToken);
-        var policies = await _userPermissionQueryService.GetUserPoliciesAsync(userId, cancellationToken);
-        var resources = await _userPermissionQueryService.GetUserResourcesAsync(userId, cancellationToken);
-        var scopes = await _userPermissionQueryService.GetUserScopesAsync(userId, cancellationToken);
+        //var policies = await _userPermissionQueryService.GetUserPoliciesAsync(userId, cancellationToken);
+        //var resources = await _userPermissionQueryService.GetUserResourcesAsync(userId, cancellationToken);
+        //var scopes = await _userPermissionQueryService.GetUserScopesAsync(userId, cancellationToken);
         // Return full user info
         return new UserInfoResponse
         {
@@ -152,10 +152,11 @@ public class UserService : IUserService
             RealmRoles = realmRoles,
             ClientRoles = clientRoles,
             Organizations = organizationSummaries,
-            Permissions = permissions,
-            Scopes = scopes,
-            Resources = resources,
-            Policies = policies
+            Permissions = permissions
+            //,
+            //Scopes = scopes,
+            //Resources = resources,
+            //Policies = policies
         };
     }
 

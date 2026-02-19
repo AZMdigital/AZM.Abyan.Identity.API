@@ -32,6 +32,8 @@ namespace AZM.Abyan.Identity.Persistence.Common
             services.AddScoped<IRepository<Scope, Guid>, Repository<Scope, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
+            services.AddScoped<IRepository<License, Guid>, Repository<License, Guid, IdentityDbContext>>();
+
             return services;
         }
     }

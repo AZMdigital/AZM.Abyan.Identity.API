@@ -90,6 +90,7 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
 
             services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
             services.AddScoped<IUserPermissionQueryService, UserPermissionQueryService>();
+            services.AddScoped<IEncryptionService, EncryptionService>();
 
             // HttpClient
             services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>

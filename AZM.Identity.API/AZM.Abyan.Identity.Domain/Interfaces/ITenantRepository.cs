@@ -11,4 +11,5 @@ public interface ITenantRepository
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Tenant?> GetTenantByNameAsync(string name, CancellationToken cancellationToken = default);
     Task<List<Tenant>> GetActiveTenants(CancellationToken cancellationToken = default);
+    Task<Tenant?> GetActiveByIdAsync(Guid id, CancellationToken ct = default);
 }

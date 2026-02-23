@@ -92,6 +92,12 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddScoped<IUserPermissionQueryService, UserPermissionQueryService>();
             services.AddScoped<IEncryptionService, EncryptionService>();
 
+            // Licensing Services
+            services.AddSingleton<IRsaKeyProvider, RsaKeyProvider>();
+            services.AddSingleton<IJwtIssuerService, JwtIssuerService>();
+            services.AddHttpClient<IKeycloakVerifier, KeycloakVerifier>();
+            services.AddScoped<ILicenseService, LicenseService>();
+
             // HttpClient
             services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
             {

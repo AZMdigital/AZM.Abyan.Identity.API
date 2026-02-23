@@ -1,11 +1,16 @@
+using AZM.Abyan.Identity.Application.Commands.License.ActivateLicense;
 using AZM.Abyan.Identity.Application.Commands.License.Create;
 using AZM.Abyan.Identity.Application.Commands.License.Delete;
 using AZM.Abyan.Identity.Application.Commands.License.Update;
+using AZM.Abyan.Identity.Application.DTOs;
 using AZM.Abyan.Identity.Application.DTOs.Licenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetAllLicenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetLicenseById;
+using AZM.Abyan.Identity.Application.Queries.License.GetSignedLicense;
+using AZM.Abyan.Identity.Application.Queries.License.ValidateLicense;
 using AZM.Abyan.Identity.Application.Resources;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 
@@ -76,10 +81,6 @@ public class LicensesController : ControllerBase
             {
                 TenantId = request.TenantId,
                 ClientId = request.ClientId,
-                LicenseKeyHash = request.LicenseKeyHash,
-                PublicKey = request.PublicKey,
-                PrivateKeyEncrypted = request.PrivateKeyEncrypted,
-                IssuedAt = request.IssuedAt,
                 ExpiryDate = request.ExpiryDate,
                 MaxUsers = request.MaxUsers,
                 PackageName = request.PackageName,
@@ -110,7 +111,7 @@ public class LicensesController : ControllerBase
                 LicenseId = request.LicenseId,
                 ExpiryDate = request.ExpiryDate,
                 MaxUsers = request.MaxUsers,
-                IsRevoked = request.IsRevoked,
+                IsActive = request.IsActive,
                 Domain = request.Domain,
                 ServerIps = request.ServerIps
             };
@@ -134,6 +135,50 @@ public class LicensesController : ControllerBase
         {
             var result = await _mediator.Send(new DeleteLicenseCommand(id), cancellationToken);
             return StatusCode(result.StatusCode, result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
+        }
+    }
+    /// <summary>Activate a license file and receive a short-lived RS256 JWT.</summary>
+    [HttpPost("activate")]
+    [AllowAnonymous]
+    // [EnableRateLimiting("activation")] // Needs to be configured in DI if uncommented
+    public async Task<ActionResult<ActivateLicenseResponse>> Activate(
+        [FromBody] ActivateLicenseRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new ActivateLicenseCommand(request.LicenseFile), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Query license validity (used for revocation checks).</summary>
+    [HttpGet("validate/{licenseId:guid}")]
+    [Authorize]
+    public async Task<ActionResult<ValidateLicenseResponse>> Validate(
+        Guid licenseId, CancellationToken ct)
+    {
+        // Extract current domain and IP for validation
+        var currentDomain = Request.Host.Host;
+        var currentIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+
+        var result = await _mediator.Send(new ValidateLicenseQuery(licenseId, currentDomain, currentIp), ct);
+        if (!result.IsValid) return Forbid();
+        return Ok(result);
+    }
+
+    /// <summary>Get the signed license file JSON for a specific license record.</summary>
+    [HttpGet("{id:guid}/signed")]
+    public async Task<ActionResult<LicenseFileDto>> GetSignedLicense(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GetSignedLicenseQuery(id), ct);
+            if (!result.IsSuccess)
+                return StatusCode(result.StatusCode, result);
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {

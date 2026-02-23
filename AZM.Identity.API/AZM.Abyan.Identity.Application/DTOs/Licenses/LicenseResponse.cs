@@ -10,7 +10,7 @@ public class LicenseResponse
     public DateTime IssuedAt { get; set; }
     public DateTime ExpiryDate { get; set; }
     public int? MaxUsers { get; set; }
-    public bool IsRevoked { get; set; }
+    public bool IsActive { get; set; }
     public string PackageName { get; set; } = string.Empty;
     public string Domain { get; set; } = string.Empty;
     public string ServerIps { get; set; } = string.Empty;

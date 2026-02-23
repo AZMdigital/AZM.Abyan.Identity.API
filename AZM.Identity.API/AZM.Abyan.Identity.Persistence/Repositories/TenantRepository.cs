@@ -62,4 +62,9 @@ public class TenantRepository : ITenantRepository
             .Where(t => !t.IsDeleted && t.IsActive)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Tenant?> GetActiveByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted && t.IsActive, ct);
+    }
 }

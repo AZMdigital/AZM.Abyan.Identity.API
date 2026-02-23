@@ -10,5 +10,5 @@ public interface IClientRepository
     Task<Guid> AddAsync(Client client, CancellationToken cancellationToken = default);
     Task<bool> DeleteClientAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> UpdateAsync(Client client, CancellationToken cancellationToken = default);
-    //Task DeleteAsync(OssFile metadata, CancellationToken cancellationToken = default);
+    Task<Client?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 }

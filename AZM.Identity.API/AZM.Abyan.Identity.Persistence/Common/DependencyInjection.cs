@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AZM.Abyan.Identity.Domain.Entities;
+using AZM.Abyan.Identity.Domain.Interfaces;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using AZM.Abyan.Identity.Persistence.DbContexts;
+using AZM.Abyan.Identity.Persistence.Repositories;
 using AZM.Abyan.Identity.Persistence.Repositories.GenericRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +35,9 @@ namespace AZM.Abyan.Identity.Persistence.Common
             services.AddScoped<IRepository<Resource, Guid>, Repository<Resource, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<License, Guid>, Repository<License, Guid, IdentityDbContext>>();
+            
+            // Licensing specific repository
+            services.AddScoped<ILicenseRepository, LicenseRepository>();
 
             return services;
         }

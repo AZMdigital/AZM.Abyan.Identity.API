@@ -38,6 +38,7 @@ public class IdentityDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TenantUserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new LicenseConfiguration());
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

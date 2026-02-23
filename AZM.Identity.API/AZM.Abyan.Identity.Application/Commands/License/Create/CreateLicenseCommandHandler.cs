@@ -64,8 +64,6 @@ public class CreateLicenseCommandHandler(
                 PackageName = request.PackageName,
                 Domain = request.Domain,
                 ServerIps = request.ServerIps,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = Guid.Empty,
                 IsActive = false
             };
 

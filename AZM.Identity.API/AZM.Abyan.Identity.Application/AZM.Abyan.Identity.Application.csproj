@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Common\Resources\" />
     <Folder Include="Queries\Client\GetClients\" />
     <Folder Include="Queries\NewFolder\" />
   </ItemGroup>

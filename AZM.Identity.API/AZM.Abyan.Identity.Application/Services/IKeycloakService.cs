@@ -93,6 +93,7 @@ public interface IKeycloakService
     Task UpdateRealmPasswordPolicyAsync(string realmName, UpdateRealmPasswordPolicyRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DeleteRealmAsync(string realmName, string adminToken, CancellationToken cancellationToken = default);
 
+    Task<List<OrganizationDto>> GetAllOrganizationsAsync(string realm, string adminToken, CancellationToken cancellationToken = default);
     // Realm Roles
     Task<List<RealmRoleResponse>> GetRealmRolesAsync(string realm, string adminToken, CancellationToken cancellationToken = default);
     Task CreateRealmRoleAsync(CreateRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);

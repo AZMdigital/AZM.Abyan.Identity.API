@@ -17,6 +17,15 @@ public class ActivateLicenseRequest
     public string LicenseFile { get; set; } = string.Empty;
 }
 
-public record ActivateLicenseResponse(string Token, Guid LicenseId, DateTime ExpiresAt);
+public record ActivateLicenseResponse(
+    string AccessToken,
+    string RefreshToken,
+    Guid LicenseId,
+    DateTime ExpiresAt);
+
+public class RefreshAccessTokenRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
+}
 
 public record ValidateLicenseResponse(bool IsValid, string? Reason = null);

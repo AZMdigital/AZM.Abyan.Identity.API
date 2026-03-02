@@ -97,7 +97,7 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddSingleton<IJwtIssuerService, JwtIssuerService>();
             services.AddHttpClient<IKeycloakVerifier, KeycloakVerifier>();
             services.AddScoped<ILicenseService, LicenseService>();
-
+            services.AddScoped<TokenService>();
             // HttpClient
             services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
             {

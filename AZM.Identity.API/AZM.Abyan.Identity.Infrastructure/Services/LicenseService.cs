@@ -62,6 +62,7 @@ public class LicenseService : ILicenseService
             var dataToVerify = Encoding.UTF8.GetBytes(canonical);
             var signatureBytes = Convert.FromBase64String(dto.Signature);
 
+            var pubKey = publicKeyPem.Replace("\\n", "\n").Trim();
             using var rsa = RSA.Create();
             rsa.ImportFromPem(publicKeyPem);
 

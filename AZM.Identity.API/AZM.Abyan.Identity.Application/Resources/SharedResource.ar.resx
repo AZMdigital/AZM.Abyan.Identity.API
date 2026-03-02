@@ -294,4 +294,70 @@
   <data name="PermissionRemovedSuccessfully" xml:space="preserve">
     <value>تم الصلاحية الدور بنجاح</value>
   </data>
+
+
+
+
+
+
+
+
+
+
+
+<data name="InvalidLicenseFileFormat" xml:space="preserve">
+    <value>صيغة ملف الترخيص غير صحيحة.</value>
+  </data>
+  <data name="LicenseSignatureInvalid" xml:space="preserve">
+    <value>توقيع الترخيص غير صحيح.</value>
+  </data>
+  <data name="InvalidTenantIdFormat" xml:space="preserve">
+    <value>صيغة معرف المستأجر غير صحيحة.</value>
+  </data>
+  <data name="TenantNotFoundOrInactive" xml:space="preserve">
+    <value>لم يتم العثور على المستأجر أو أنه غير نشط.</value>
+  </data>
+  <data name="TenantRealmNotFound" xml:space="preserve">
+    <value>لم يتم العثور على حوزة المستأجر في Keycloak.</value>
+  </data>
+  <data name="ClientNotFoundInRealm" xml:space="preserve">
+    <value>لم يتم العثور على العميل في حوزة Keycloak.</value>
+  </data>
+  <data name="InvalidLicenseIdFormat" xml:space="preserve">
+    <value>صيغة معرف الترخيص غير صحيحة.</value>
+  </data>
+  <data name="LicensePayloadTampered" xml:space="preserve">
+    <value>تم التلاعب بملف الترخيص.</value>
+  </data>
+  <data name="CannotActivateExpiredLicense" xml:space="preserve">
+    <value>لا يمكن تفعيل ترخيص منتهي الصلاحية.</value>
+  </data>
+  <data name="LicenseReactivated" xml:space="preserve">
+    <value>تم إعادة تفعيل الترخيص {0}</value>
+  </data>
+  <data name="LicenseCreated" xml:space="preserve">
+    <value>تم إنشاء الترخيص {0} للمستأجر {1}</value>
+  </data>
+  <data name="InvalidOrExpiredRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صحيح أو منتهي الصلاحية.</value>
+  </data>
+  <data name="RefreshTokenNotValid" xml:space="preserve">
+    <value>رمز التحديث لم يعد صحيحاً.</value>
+  </data>
+  <data name="AssociatedLicenseNotFound" xml:space="preserve">
+    <value>لم يتم العثور على الترخيص المرتبط.</value>
+  </data>
+  <data name="AssociatedLicenseNotActive" xml:space="preserve">
+    <value>الترخيص المرتبط غير نشط.</value>
+  </data>
+  <data name="AssociatedLicenseExpired" xml:space="preserve">
+    <value>الترخيص المرتبط منتهي الصلاحية.</value>
+  </data>
+  <data name="RefreshTokenRotated" xml:space="preserve">
+    <value>تم تدوير رمز التحديث للترخيص {0}</value>
+  </data>
+  <data name="AllTokensRevoked" xml:space="preserve">
+    <value>تم إلغاء جميع رموز التحديث للترخيص {0}</value>
+  </data>
+
 </root>

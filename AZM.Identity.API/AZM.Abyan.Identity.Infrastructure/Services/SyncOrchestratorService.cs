@@ -54,10 +54,10 @@ public class SyncOrchestratorService : ISyncOrchestratorService
         var result = new SyncResult();
 
         // Start transaction
-        IDbContextTransaction? transaction = null;
+        //IDbContextTransaction? transaction = null;
         try
         {
-            transaction = await _tenantRepository.BeginTransactionAsync(cancellationToken);
+            //transaction = await _tenantRepository.BeginTransactionAsync(cancellationToken);
 
             try
             {
@@ -147,40 +147,40 @@ public class SyncOrchestratorService : ISyncOrchestratorService
 
                 result.Success = !result.Errors.Any();
 
-                if (result.Success)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
-                else
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
+                //if (result.Success)
+                //{
+                //    await transaction.CommitAsync(cancellationToken);
+                //}
+                //else
+                //{
+                //    await transaction.RollbackAsync(cancellationToken);
+                //}
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
+                //if (transaction != null)
+                //{
+                //    await transaction.RollbackAsync(cancellationToken);
+                //}
                 result.Success = false;
                 result.Errors.Add($"Critical error during sync: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
-            if (transaction != null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-            }
+            //if (transaction != null)
+            //{
+            //    await transaction.RollbackAsync(cancellationToken);
+            //}
             result.Success = false;
             result.Errors.Add($"Critical error starting transaction: {ex.Message}");
         }
         finally
         {
-            if (transaction != null)
-            {
-                await transaction.DisposeAsync();
-            }
+            //if (transaction != null)
+            //{
+            //    await transaction.DisposeAsync();
+            //}
         }
 
         return result;

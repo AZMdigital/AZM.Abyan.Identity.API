@@ -72,7 +72,7 @@ public class PolicySyncService : IPolicySyncService
                         var rolesList = JsonSerializer.Deserialize<List<RoleConfig>>(rolesJson);
                         if (rolesList != null && rolesList.Any())
                         {
-                            var roleId = rolesList.First().Id;
+                            var roleId = rolesList.First().id;
                             if (Guid.TryParse(roleId, out var roleIdGuid))
                             {
                                 role = allRoles.FirstOrDefault(r => r.Id == roleIdGuid);
@@ -113,7 +113,7 @@ public class PolicySyncService : IPolicySyncService
                     localPolicy.RoleId = role.Id;
                     localPolicy.UpdatedAt = DateTime.UtcNow;
                     localPolicy.UpdatedBy = Guid.Empty;
-                    _policyRepository.Update(localPolicy);
+                     _policyRepository.Update(localPolicy);
                     result.Updated++;
                 }
             }
@@ -145,8 +145,8 @@ public class PolicySyncService : IPolicySyncService
 
     private class RoleConfig
     {
-        public string Id { get; set; } = string.Empty;
-        public bool Required { get; set; }
+        public string id { get; set; } = string.Empty;
+        public bool required { get; set; }
     }
 }
 

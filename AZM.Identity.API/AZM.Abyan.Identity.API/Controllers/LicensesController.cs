@@ -1,14 +1,15 @@
 using AZM.Abyan.Identity.Application.Commands.License.ActivateLicense;
 using AZM.Abyan.Identity.Application.Commands.License.Create;
 using AZM.Abyan.Identity.Application.Commands.License.Delete;
+using AZM.Abyan.Identity.Application.Commands.License.RefreshToken;
 using AZM.Abyan.Identity.Application.Commands.License.Update;
 using AZM.Abyan.Identity.Application.DTOs;
 using AZM.Abyan.Identity.Application.DTOs.Licenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetAllLicenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetLicenseById;
 using AZM.Abyan.Identity.Application.Queries.License.GetSignedLicense;
-using AZM.Abyan.Identity.Application.Queries.License.ValidateLicense;
-using AZM.Abyan.Identity.Application.Resources;
+    using AZM.Abyan.Identity.Application.Queries.License.ValidateLicense;
+    using AZM.Abyan.Identity.Application.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -105,10 +106,10 @@ public class LicensesController : ControllerBase
     {
         try
         {
-            request.LicenseId = id;
+           // request.LicenseId = id;
             var command = new UpdateLicenseCommand
             {
-                LicenseId = request.LicenseId,
+                LicenseId = id,
                 ExpiryDate = request.ExpiryDate,
                 MaxUsers = request.MaxUsers,
                 IsActive = request.IsActive,
@@ -141,7 +142,8 @@ public class LicensesController : ControllerBase
             return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
-    /// <summary>Activate a license file and receive a short-lived RS256 JWT.</summary>
+
+    /// <summary>Activate a license file and receive a short-lived RS256 JWT with refresh token.</summary>
     [HttpPost("activate")]
     [AllowAnonymous]
     // [EnableRateLimiting("activation")] // Needs to be configured in DI if uncommented
@@ -151,6 +153,28 @@ public class LicensesController : ControllerBase
         var result = await _mediator.Send(
             new ActivateLicenseCommand(request.LicenseFile), ct);
         return Ok(result);
+    }
+
+    /// <summary>Refresh access token using refresh token (when access token expires).</summary>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<ActionResult<RefreshAccessTokenResponse>> RefreshAccessToken(
+        [FromBody] RefreshAccessTokenRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _mediator.Send(
+                new RefreshAccessTokenCommand(request.RefreshToken), ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = _localizer["OperationFailed"] ?? ex.Message });
+        }
     }
 
     /// <summary>Query license validity (used for revocation checks).</summary>

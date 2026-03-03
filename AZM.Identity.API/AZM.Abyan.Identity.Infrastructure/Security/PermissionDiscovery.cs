@@ -8,9 +8,9 @@ namespace AZM.Abyan.Identity.Infrastructure.Security;
 
 public static class PermissionDiscovery
 {
-    public static List<Permission> Discover(Assembly assembly)
+    public static List<DiscoveredPermission> Discover(Assembly assembly)
     {
-        var permissions = new List<Permission>();
+        var permissions = new List<DiscoveredPermission>();
 
         var controllers = assembly.GetTypes()
             .Where(t => typeof(ControllerBase).IsAssignableFrom(t) && !t.IsAbstract)
@@ -71,11 +71,11 @@ public static class PermissionDiscovery
                     continue;
                 }
 
-                permissions.Add(new Permission
+                permissions.Add(new DiscoveredPermission
                 {
                     Name = name,
-                    Controller = resource, // Controller name
-                    Action = action, // Action name
+                    ResourceName = resource,
+                    ScopeName = action,
                     Description = description
                 });
             }
@@ -83,4 +83,12 @@ public static class PermissionDiscovery
 
         return permissions;
     }
+}
+
+public class DiscoveredPermission
+{
+    public required string Name { get; set; }
+    public required string ResourceName { get; set; }
+    public required string ScopeName { get; set; }
+    public string? Description { get; set; }
 }

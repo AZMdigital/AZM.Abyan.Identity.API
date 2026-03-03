@@ -55,7 +55,7 @@ public class RolesController : ControllerBase
             command.Description = request.Description;
             command.Realm = realm;
             command.ClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
-            
+
             var result = await _mediator.Send(command);
             var response = StatusCode(result.StatusCode, result);
             return response;
@@ -74,7 +74,7 @@ public class RolesController : ControllerBase
             // Get role by name to find the local ID
             var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
-            
+
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
                 return NotFound(new { message = _localizer["RoleNotFound"] });
@@ -106,7 +106,7 @@ public class RolesController : ControllerBase
             // Get role by name to find the local ID
             var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
             var role = roles.FirstOrDefault(r => r.Name == roleName);
-            
+
             if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
             {
                 return NotFound(new { message = _localizer["RoleNotFound"] });

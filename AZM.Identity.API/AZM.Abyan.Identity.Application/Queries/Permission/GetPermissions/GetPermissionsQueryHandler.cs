@@ -15,15 +15,23 @@ public class GetPermissionsQueryHandler(
     {
         var query = _permissionRepository.GetWhere(p => !p.IsDeleted);
 
-        var permissions = await query.ToListAsync(cancellationToken);
+        var permissions = await query
+            .Include(p => p.Scope)
+            .Include(p => p.Resources)
+            .Include(p => p.Policy)
+            .ToListAsync(cancellationToken);
 
         var response = permissions.Select(p => new PermissionResponse
         {
             Id = p.Id,
             Name = p.Name,
             Description = p.Description,
-            Controller = p.Controller,
-            Action = p.Action,
+            ScopeId = p.ScopeId,
+            ScopeName = p.Scope?.Name ?? string.Empty,
+            ResourceId = p.ResourceId,
+            ResourceName = p.Resources?.Name ?? string.Empty,
+            PolicyId = p.PolicyId,
+            PolicyName = p.Policy?.Name ?? string.Empty,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt
         }).ToList();

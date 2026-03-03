@@ -5,14 +5,9 @@ namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SyncController : ControllerBase
+public class SyncController(ISyncOrchestratorService syncOrchestratorService) : ControllerBase
 {
-    private readonly ISyncOrchestratorService _syncOrchestratorService;
-
-    public SyncController(ISyncOrchestratorService syncOrchestratorService)
-    {
-        _syncOrchestratorService = syncOrchestratorService;
-    }
+    private readonly ISyncOrchestratorService _syncOrchestratorService = syncOrchestratorService;
 
     /// <summary>
     /// Sync all entities from Keycloak to local database

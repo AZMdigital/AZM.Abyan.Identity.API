@@ -38,42 +38,19 @@ public class PermissionSyncService : IPermissionSyncService
         // 1. Discover Permissions
         var discoveredPermissions = PermissionDiscovery.Discover(assembly);
         _logger.LogInformation($"Discovered {discoveredPermissions.Count} unique permission strings.");
-        foreach(var p in discoveredPermissions)
+        foreach (var p in discoveredPermissions)
         {
-             _logger.LogDebug($"Discovered: {p.Name} (Controller: {p.Controller}, Action: {p.Action})");
+            _logger.LogDebug($"Discovered: {p.Name} (Resource: {p.ResourceName}, Action: {p.ScopeName})");
         }
 
-        // 2. Sync with Database
-        await SyncWithDatabaseAsync(discoveredPermissions, cancellationToken);
-        _logger.LogInformation("Database sync completed.");
-
-        // 3. Sync with Keycloak
+        // 2. Sync with Keycloak and Database
         await SyncWithKeycloakAsync(discoveredPermissions, cancellationToken);
-        
+
         _logger.LogInformation("Permission sync process finished.");
     }
 
-    private async Task SyncWithDatabaseAsync(List<Permission> permissions, CancellationToken cancellationToken)
-    {
-        var existingPermissions = await _dbContext.Permissions.ToListAsync(cancellationToken);
-        
-        var newPermissions = permissions
-            .Where(p => !existingPermissions.Any(ep => ep.Name == p.Name))
-            .ToList();
 
-        if (newPermissions.Any())
-        {
-            _logger.LogInformation($"Adding {newPermissions.Count} new permissions to database.");
-            await _dbContext.Permissions.AddRangeAsync(newPermissions, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
-        else
-        {
-            _logger.LogInformation("No new permissions to add to database.");
-        }
-    }
-
-    private async Task SyncWithKeycloakAsync(List<Permission> permissions, CancellationToken cancellationToken)
+    private async Task SyncWithKeycloakAsync(List<DiscoveredPermission> permissions, CancellationToken cancellationToken)
     {
         try
         {
@@ -94,105 +71,220 @@ public class PermissionSyncService : IPermissionSyncService
             _logger.LogInformation($"Syncing with Keycloak Client: {_keycloakConfig.ClientId} (UUID: {clientUuid}) in realm '{realm}'");
 
             // Ensure Authorization Services are enabled
-            //if (!targetClient.AuthorizationServicesEnabled)
-            //{
-                _logger.LogInformation($"Authorization Services not enabled for client. Enabling now...");
-                await _keycloakService.UpdateClientAsync(realm, clientUuid.ToString(), new UpdateClientRequest
-                {
-                    ClientId = targetClient.ClientId,
-                    Name = targetClient.Name,
-                    Description = targetClient.Description,
-                    Enabled = true,
-                    Protocol = "openid-connect",
-                    PublicClient = false, // Must be confidential for AuthZ/ServiceAccounts
-                    BearerOnly = false,
-                    ServiceAccountsEnabled = true, // Required for AuthZ often
-                    AuthorizationServicesEnabled = true,
-                    RedirectUris = Array.Empty<string>().ToList(),
-                    WebOrigins =Array.Empty<string>().ToList()
-                }, adminToken, cancellationToken);
-                _logger.LogInformation("Authorization Services successfully enabled.");
-            //}
+            _logger.LogInformation($"Authorization Services check for client...");
+            await _keycloakService.UpdateClientAsync(realm, clientUuid.ToString(), new UpdateClientRequest
+            {
+                ClientId = targetClient.ClientId,
+                Name = targetClient.Name,
+                Description = targetClient.Description,
+                Enabled = true,
+                Protocol = "openid-connect",
+                PublicClient = false,
+                BearerOnly = false,
+                ServiceAccountsEnabled = true,
+                AuthorizationServicesEnabled = true,
+                RedirectUris = Array.Empty<string>().ToList(),
+                WebOrigins = Array.Empty<string>().ToList()
+            }, adminToken, cancellationToken);
 
             // Get existing client roles ONCE
-            var existingRoles = await _keycloakService.GetClientRolesAsync(realm, clientUuid.ToString(), adminToken, cancellationToken);
-            var existingRoleNames = existingRoles.Select(r => r.Name).ToHashSet();
+            var existingKeycloakRoles = await _keycloakService.GetClientRolesAsync(realm, clientUuid.ToString(), adminToken, cancellationToken);
+            var existingRoleNames = existingKeycloakRoles.Select(r => r.Name).ToHashSet();
 
-            // Group by Controller
-            var controllerGroups = permissions.GroupBy(p => p.Controller).ToList();
-            _logger.LogInformation($"Grouped into {controllerGroups.Count} controllers.");
+            // Group by Resource
+            var resourceGroups = permissions.GroupBy(p => p.ResourceName).ToList();
+            _logger.LogInformation($"Grouped into {resourceGroups.Count} resources.");
 
-            foreach (var group in controllerGroups)
+            foreach (var group in resourceGroups)
             {
-                var controllerName = group.Key;
+                var resourceName = group.Key;
                 var actionPermissions = group.ToList();
+                var keycloakResourceName = $"res:{resourceName}";
 
-                _logger.LogInformation($"Processing Controller: {controllerName} with {actionPermissions.Count} actions.");
+                _logger.LogInformation($"Processing Resource: {resourceName} with {actionPermissions.Count} actions.");
 
-                // Process each permission (action) for this controller
+                // 1. Manage Keycloak Resource
+                var existingResource = await _keycloakService.GetResourceAsync(realm, clientUuid.ToString(), keycloakResourceName, adminToken, cancellationToken);
+
+                Guid keycloakResourceId;
+                var scopeDtos = actionPermissions.Select(s => new AZM.Abyan.Identity.Application.DTOs.AuthZ.ScopeDto { Name = s.ScopeName }).ToList();
+                
+                var resourceDto = new AZM.Abyan.Identity.Application.DTOs.AuthZ.ResourceDto
+                {
+                    Name = keycloakResourceName,
+                    DisplayName = $"{resourceName} Controller",
+                    Type = "urn:abyan:resource:controller",
+                    Uris = new List<string> { $"/{resourceName}" },
+                    Scopes = scopeDtos
+                };
+
+                if (existingResource == null)
+                {
+                    _logger.LogInformation($"Creating Keycloak Resource '{keycloakResourceName}'...");
+                    keycloakResourceId = await _keycloakService.CreateResourceAsync(realm, clientUuid.ToString(), resourceDto, adminToken, cancellationToken);
+                }
+                else
+                {
+                    keycloakResourceId = existingResource.Id.Value;
+                    resourceDto.Id = keycloakResourceId;
+                    await _keycloakService.UpdateResourceAsync(realm, clientUuid.ToString(), resourceDto, adminToken, cancellationToken);
+                }
+
+                // Manage Resource in DB (Deferred until we have a scope)
+                var dbResource = await _dbContext.Resources.FirstOrDefaultAsync(r => r.Id == keycloakResourceId, cancellationToken);
+
+                // 2. Manage Scopes, Roles, Policies and Permissions for each Action
                 foreach (var permDef in actionPermissions)
                 {
-                    _logger.LogDebug($"Processing Permission: {permDef.Name} (Controller: {permDef.Controller}, Action: {permDef.Action})");
+                    _logger.LogDebug($"Processing Action: {permDef.ScopeName} (Permission: {permDef.Name})");
 
-                    // Get or Add to DB context to track updates
-                    var dbPermission = await _dbContext.Permissions.FirstOrDefaultAsync(p => p.Name == permDef.Name, cancellationToken);
-                    
-                    // Prepare role attributes
-                    var attributes = new Dictionary<string, string[]>
+                    // a. Ensure Scope exists in DB
+                    var dbScope = await _dbContext.Scopes.FirstOrDefaultAsync(s => s.Name == permDef.ScopeName, cancellationToken);
+                    if (dbScope == null)
                     {
-                        ["Controller"] = new[] { permDef.Controller }
-                    };
-
-                    if (!string.IsNullOrEmpty(permDef.Action))
-                    {
-                        attributes["Action"] = new[] { permDef.Action };
+                        dbScope = new Scope
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = permDef.ScopeName,
+                            Description = $"{permDef.ScopeName} scope",
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = Guid.Empty
+                        };
+                        _dbContext.Scopes.Add(dbScope);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
                     }
 
-                    // a. Ensure Client Role exists (this is the permission)
+                    // Ensure Resource exists in DB
+                    if (dbResource == null)
+                    {
+                        dbResource = new Resource
+                        {
+                            Id = keycloakResourceId,
+                            Name = resourceName,
+                            Description = $"{resourceName} Resource",
+                            ScopeId = dbScope.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = Guid.Empty
+                        };
+                        _dbContext.Resources.Add(dbResource);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                    }
+
+                    // b. Ensure Client Role exists in Keycloak
                     if (!existingRoleNames.Contains(permDef.Name))
                     {
-                        _logger.LogInformation($"Creating permission role '{permDef.Name}' in Keycloak.");
+                        _logger.LogInformation($"Creating client role '{permDef.Name}' in Keycloak.");
                         await _keycloakService.CreateClientRoleAsync(realm, clientUuid.ToString(), new CreateClientRoleRequest
                         {
                             Name = permDef.Name,
-                            Description = permDef.Description ?? string.Empty,
-                            Attributes = attributes
+                            Description = permDef.Description ?? string.Empty
                         }, adminToken, cancellationToken);
-                        
                         existingRoleNames.Add(permDef.Name);
+                    }
+
+                    // Ensure Role exists in DB
+                    var dbRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == permDef.Name, cancellationToken);
+                    if (dbRole == null)
+                    {
+                        dbRole = new Role
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = permDef.Name,
+                            Description = permDef.Description ?? string.Empty,
+                            ClientId = clientUuid,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = Guid.Empty
+                        };
+                        _dbContext.Roles.Add(dbRole);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                    }
+
+                    // c. Manage Policy (Role-based) in Keycloak
+                    var policyName = $"pol:{resourceName}:{permDef.ScopeName}";
+                    var existingPolicy = await _keycloakService.GetPolicyAsync(realm, clientUuid.ToString(), policyName, adminToken, cancellationToken);
+                    string keycloakPolicyId;
+                    if (existingPolicy == null)
+                    {
+                        _logger.LogInformation($"Creating Keycloak Policy '{policyName}'...");
+                        keycloakPolicyId = await _keycloakService.CreateRolePolicyAsync(realm, clientUuid.ToString(), policyName, new[] { permDef.Name }, adminToken, cancellationToken);
                     }
                     else
                     {
-                        // Update existing role with attributes if needed
-                        _logger.LogInformation($"Updating permission role '{permDef.Name}' in Keycloak.");
-                        await _keycloakService.UpdateClientRoleAsync(realm, clientUuid.ToString(), permDef.Name, new UpdateClientRoleRequest
-                        {
-                            Name = permDef.Name,
-                            Description = permDef.Description ?? string.Empty,
-                            Attributes = attributes
-                        }, adminToken, cancellationToken);
+                        keycloakPolicyId = existingPolicy.Id;
                     }
 
-                    // Get the created/updated role from Keycloak to get its ID
-                    var keycloakRoles = await _keycloakService.GetClientRolesAsync(realm, clientUuid.ToString(), adminToken, cancellationToken);
-                    var createdRole = keycloakRoles.FirstOrDefault(r => r.Name == permDef.Name);
-
-                    if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))
+                    // Ensure Policy exists in DB
+                    var dbPolicy = await _dbContext.Policies.FirstOrDefaultAsync(p => p.Name == policyName, cancellationToken);
+                    if (dbPolicy == null)
                     {
-                        _logger.LogWarning($"Failed to get role ID for permission '{permDef.Name}' from Keycloak");
-                        continue;
+                        dbPolicy = new Policy
+                        {
+                            Id = Guid.Parse(keycloakPolicyId),
+                            Name = policyName,
+                            RoleId = dbRole.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = Guid.Empty
+                        };
+                        _dbContext.Policies.Add(dbPolicy);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
                     }
 
-                    // Update DB Permission with Keycloak role ID
+                    // d. Manage Scope-based Permission in Keycloak
+                    var authzPermissionName = $"perm:{resourceName}:{permDef.ScopeName}";
+                    var existingAuthzPerm = await _keycloakService.GetPermissionAsync(realm, clientUuid.ToString(), authzPermissionName, adminToken, cancellationToken);
+                    string keycloakAuthzPermId;
+                    if (existingAuthzPerm == null)
+                    {
+                        _logger.LogInformation($"Creating Keycloak Permission '{authzPermissionName}'...");
+                        keycloakAuthzPermId = await _keycloakService.CreateScopePermissionAsync(
+                            realm,
+                            clientUuid.ToString(),
+                            authzPermissionName,
+                            [keycloakResourceName],
+                            [permDef.ScopeName],
+                            [policyName],
+                            adminToken,
+                            cancellationToken);
+                    }
+                    else
+                    {
+                        keycloakAuthzPermId = existingAuthzPerm.Id;
+                    }
+
+                    // e. Manage Permission in DB with Keycloak ID
+                    var keycloakPermissionIdGuid = Guid.Parse(keycloakAuthzPermId);
+                    var dbPermission = await _dbContext.Permissions.FirstOrDefaultAsync(p => p.Name == permDef.Name, cancellationToken);
+
                     if (dbPermission == null)
                     {
+                        _logger.LogInformation($"Adding permission {permDef.Name} to DB with Keycloak ID {keycloakPermissionIdGuid}");
                         dbPermission = new Permission
                         {
-                            Id = keycloakRoleId,
+                            Id = keycloakPermissionIdGuid,
                             Name = permDef.Name,
-                            Description = permDef.Description ?? string.Empty,
-                            Controller = permDef.Controller,
-                            Action = permDef.Action,
+                            Description = permDef.Description,
+                            ResourceId = dbResource.Id,
+                            ScopeId = dbScope.Id,
+                            PolicyId = dbPolicy.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedBy = Guid.Empty
+                        };
+                        _dbContext.Permissions.Add(dbPermission);
+                    }
+                    else if (dbPermission.Id != keycloakPermissionIdGuid)
+                    {
+                        _logger.LogWarning($"Permission {dbPermission.Name} ID mismatch. Found {dbPermission.Id}, expected {keycloakPermissionIdGuid}. Deleting and recreating...");
+                        _dbContext.Permissions.Remove(dbPermission);
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+
+                        dbPermission = new Permission
+                        {
+                            Id = keycloakPermissionIdGuid,
+                            Name = permDef.Name,
+                            Description = permDef.Description,
+                            ResourceId = dbResource.Id,
+                            ScopeId = dbScope.Id,
+                            PolicyId = dbPolicy.Id,
                             CreatedAt = DateTime.UtcNow,
                             CreatedBy = Guid.Empty
                         };
@@ -200,29 +292,20 @@ public class PermissionSyncService : IPermissionSyncService
                     }
                     else
                     {
-                        // Update existing permission
-                        if (dbPermission.Id != keycloakRoleId)
-                        {
-                            _logger.LogWarning($"Permission {dbPermission.Name} has different ID. Updating from {dbPermission.Id} to {keycloakRoleId}");
-                            dbPermission.Id = keycloakRoleId;
-                        }
-                        dbPermission.Name = permDef.Name;
-                        dbPermission.Description = permDef.Description ?? string.Empty;
-                        dbPermission.Controller = permDef.Controller;
-                        dbPermission.Action = permDef.Action;
-                        dbPermission.UpdatedAt = DateTime.UtcNow;
-                        dbPermission.UpdatedBy = Guid.Empty;
+                        dbPermission.ResourceId = dbResource.Id;
+                        dbPermission.ScopeId = dbScope.Id;
+                        dbPermission.PolicyId = dbPolicy.Id;
                     }
                     
                     await _dbContext.SaveChangesAsync(cancellationToken);
                 }
             }
-            _logger.LogInformation("Keycloak optimization/authz sync completed successfully with DB mapping updates.");
+            _logger.LogInformation("Keycloak sync and database persistence completed successfully.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error syncing permissions with Keycloak.");
-            throw; 
+            throw;
         }
     }
 }

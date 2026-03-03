@@ -1,26 +1,22 @@
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
-using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Application.Commands.Role.Create;
 
 public class CreateRoleCommandHandler(
     IRepository<Domain.Entities.Role, Guid> roleRepository,
     IKeycloakService keycloakService,
-    IStringLocalizer<SharedResource> localizer,
-    IOptions<KeycloakConfigurations> keycloakConfigurations) : IRequestHandler<CreateRoleCommand, Result<Guid>>
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<CreateRoleCommand, Result<Guid>>
 {
     private readonly IRepository<Domain.Entities.Role, Guid> _roleRepository = roleRepository;
     private readonly IKeycloakService _keycloakService = keycloakService;
     private readonly IStringLocalizer<SharedResource> _localizer = localizer;
-    private readonly KeycloakConfigurations _keycloakConfigurations = keycloakConfigurations.Value;
 
     public async Task<Result<Guid>> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
@@ -75,20 +71,7 @@ public class CreateRoleCommandHandler(
             await _roleRepository.CreateAsync(role, cancellationToken);
             await _roleRepository.SaveChangesAsync(cancellationToken);
 
-            var result = Result<Guid>.Created(role.Id, _localizer["RoleCreatedSuccessfully"] ?? "Role created successfully");
-            
-            // DEBUG: Capture result details as JSON string for debugging
-            var debugResultJson = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                StatusCode = result.StatusCode,
-                IsSuccess = result.IsSuccess,
-                Message = result.Message,
-                Data = result.Data,
-                Errors = result.Errors
-            });
-            var debugResultForInspector = debugResultJson; // Variable for debugger inspection
-            
-            return result;
+            return Result<Guid>.Created(role.Id, _localizer["RoleCreatedSuccessfully"] ?? "Role created successfully");
         }
         catch (Exception ex)
         {
@@ -96,27 +79,27 @@ public class CreateRoleCommandHandler(
         }
     }
 
-    private string? ResolveClientInternalId(string realm, string clientId)
-    {
-        // Find tenant configuration for the realm
-        if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
-        {
-            return null;
-        }
+    //private string? ResolveClientInternalId(string realm, string clientId)
+    //{
+    //    // Find tenant configuration for the realm
+    //    if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
+    //    {
+    //        return null;
+    //    }
 
-        // Check KeycloakFormbuilder
-        if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakFormbuilder.ClientInternalId;
-        }
+    //    // Check KeycloakFormbuilder
+    //    if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakFormbuilder.ClientInternalId;
+    //    }
 
-        // Check KeycloakWorkflow
-        if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakWorkflow.ClientInternalId;
-        }
+    //    // Check KeycloakWorkflow
+    //    if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return tenantConfig.KeycloakWorkflow.ClientInternalId;
+    //    }
 
-        return null;
-    }
+    //    return null;
+    //}
 }
 

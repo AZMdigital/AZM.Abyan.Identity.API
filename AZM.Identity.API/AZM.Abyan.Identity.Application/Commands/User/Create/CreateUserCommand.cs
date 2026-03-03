@@ -14,6 +14,6 @@ public class CreateUserCommand : BaseEntity, IRequest<Result<Guid>>
     public string Password { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
     public bool EmailVerified { get; set; } = false;
-    public string? RealmName { get; set; } // Optional: if provided, TenantId will be resolved from this
+    public string? OrganizationName { get; set; } // Optional: if provided, TenantId will be resolved from this
 }
 

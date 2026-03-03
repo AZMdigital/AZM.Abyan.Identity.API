@@ -1,12 +1,14 @@
-using System;
-using System.Reflection;
 using AZM.Abyan.Identity.API.Extensions;
+using AZM.Abyan.Identity.API.Middleware;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.PostgreSQL;
+using System;
+using System.Reflection;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -70,10 +72,22 @@ try
         .AddSupportedUICultures("en", "ar");
 
     app.UseRequestLocalization(localizationOptions);
+ 
+    // Configure Forwarded Headers
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                           ForwardedHeaders.XForwardedHost |
+                           ForwardedHeaders.XForwardedProto
+    });
 
     // Security
     app.UseAuthentication();
     app.UseAuthorization();
+    
+    // License Validation (must run before controllers)
+    app.UseMiddleware<AZM.Abyan.Identity.Infrastructure.Middleware.LicenseValidationMiddleware>();
+    //app.UseMiddleware<UmaAuthorizationMiddleware>();
 
     // app.UseMiddleware<PermissionMiddleware>();
 
@@ -83,22 +97,22 @@ try
 
     #region Startup Tasks
 
-    using (var scope = app.Services.CreateScope())
-    {
-        var permissionSyncService = scope.ServiceProvider
-            .GetRequiredService<IPermissionSyncService>();
+    //using (var scope = app.Services.CreateScope())
+    //{
+    //    var permissionSyncService = scope.ServiceProvider
+    //        .GetRequiredService<IPermissionSyncService>();
 
-        try
-        {
-            await permissionSyncService
-                .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Failed to sync permissions on startup.");
-        }
-    }
+    //    try
+    //    {
+    //        await permissionSyncService
+    //            .SyncPermissionsAsync(Assembly.GetExecutingAssembly());
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    //        logger.LogError(ex, "Failed to sync permissions on startup.");
+    //    }
+    //}
 
     #endregion
 

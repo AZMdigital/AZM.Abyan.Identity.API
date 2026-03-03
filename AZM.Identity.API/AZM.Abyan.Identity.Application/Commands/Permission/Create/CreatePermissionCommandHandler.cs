@@ -1,5 +1,4 @@
-using AZM.Abyan.Identity.Application.DTOs.Responses;
-using AZM.Abyan.Identity.Application.Models;
+﻿using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
@@ -7,20 +6,23 @@ using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Application.Commands.Permission.Create;
 
 public class CreatePermissionCommandHandler(
     IRepository<Domain.Entities.Permission, Guid> permissionRepository,
+    IRepository<Domain.Entities.Scope, Guid> scopeRepository,
+    IRepository<Domain.Entities.Resource, Guid> resourceRepository,
+    IRepository<Domain.Entities.Policy, Guid> policyRepository,
     IKeycloakService keycloakService,
-    IStringLocalizer<SharedResource> localizer,
-    IOptions<KeycloakConfigurations> keycloakConfigurations) : IRequestHandler<CreatePermissionCommand, Result<Guid>>
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<CreatePermissionCommand, Result<Guid>>
 {
     private readonly IRepository<Domain.Entities.Permission, Guid> _permissionRepository = permissionRepository;
+    private readonly IRepository<Domain.Entities.Scope, Guid> _scopeRepository = scopeRepository;
+    private readonly IRepository<Domain.Entities.Resource, Guid> _resourceRepository = resourceRepository;
+    private readonly IRepository<Domain.Entities.Policy, Guid> _policyRepository = policyRepository;
     private readonly IKeycloakService _keycloakService = keycloakService;
     private readonly IStringLocalizer<SharedResource> _localizer = localizer;
-    private readonly KeycloakConfigurations _keycloakConfigurations = keycloakConfigurations.Value;
 
     public async Task<Result<Guid>> Handle(CreatePermissionCommand request, CancellationToken cancellationToken)
     {
@@ -29,51 +31,38 @@ public class CreatePermissionCommandHandler(
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
-            // Resolve client internal ID from configuration
-            //var clientInternalId = ResolveClientInternalId(request.RealmName, request.KeycloakClientId);
-            //if (string.IsNullOrEmpty(clientInternalId))
-            //{
-            //    return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.RealmName}'");
-            //}
-
-            // Parse ClientInternalId to Guid for local ClientId
-            //if (!Guid.TryParse(request.ClientId, out var clientIdGuid))
-            //{
-            //    return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
-            //}
-
-            // Prepare role attributes for Keycloak
-            // Controller is mandatory, Action is optional
-            var attributes = new Dictionary<string, string[]>
+            // Get Scope, Resource, and Policy entities to get their names for Keycloak
+            var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
+            if (scope == null)
             {
-                ["Controller"] = new[] { request.Controller }
-            };
-
-            if (!string.IsNullOrEmpty(request.Action))
-            {
-                attributes["Action"] = new[] { request.Action };
+                return Result<Guid>.Failure(_localizer["ScopeNotFound"] ?? $"Scope with ID {request.ScopeId} not found");
             }
 
-            // Create permission as a role in Keycloak with custom attributes
-            var createRoleRequest = new DTOs.Roles.CreateClientRoleRequest
+            var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
+            if (resource == null)
             {
-                Name = request.Name,
-                Description = request.Description ?? string.Empty,
-                Attributes = attributes
-            };
+                return Result<Guid>.Failure(_localizer["ResourceNotFound"] ?? $"Resource with ID {request.ResourceId} not found");
+            }
 
-            await _keycloakService.CreateClientRoleAsync(
+            var policy = await _policyRepository.GetByIdAsync(request.PolicyId, cancellationToken);
+            if (policy == null)
+            {
+                return Result<Guid>.Failure(_localizer["PolicyNotFound"] ?? $"Policy with ID {request.PolicyId} not found");
+            }
+
+            // Create permission in Keycloak first
+            // Keycloak needs resource names, scope names, and policy names
+            var keycloakPermissionId = await _keycloakService.CreateScopePermissionAsync(
                 request.RealmName,
-                request.ClientId.ToString(),
-                createRoleRequest,
+                request.KeycloakClientId,
+                request.Name,
+                new[] { resource.Name },
+                new[] { scope.Name },
+                new[] { policy.Name },
                 adminToken,
                 cancellationToken);
 
-            // Get the created role from Keycloak to get its ID
-            var keycloakRoles = await _keycloakService.GetClientRolesAsync(request.RealmName, request.ClientId.ToString(), adminToken, cancellationToken);
-            var createdRole = keycloakRoles.FirstOrDefault(r => r.Name == request.Name);
-
-            if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))
+            if (string.IsNullOrEmpty(keycloakPermissionId) || !Guid.TryParse(keycloakPermissionId, out var keycloakPermissionIdGuid))
             {
                 return Result<Guid>.Failure(_localizer["FailedToCreatePermissionInKeycloak"] ?? "Failed to create permission in Keycloak or retrieve its ID");
             }
@@ -81,11 +70,12 @@ public class CreatePermissionCommandHandler(
             // Create local entity with ID from Keycloak
             var permission = new Domain.Entities.Permission
             {
-                Id = keycloakRoleId,
+                Id = keycloakPermissionIdGuid,
                 Name = request.Name,
                 Description = request.Description ?? string.Empty,
-                Controller = request.Controller,
-                Action = request.Action,
+                ScopeId = request.ScopeId,
+                ResourceId = request.ResourceId,
+                PolicyId = request.PolicyId,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Guid.Empty
             };
@@ -93,48 +83,12 @@ public class CreatePermissionCommandHandler(
             await _permissionRepository.CreateAsync(permission, cancellationToken);
             await _permissionRepository.SaveChangesAsync(cancellationToken);
 
-            var result = Result<Guid>.Created(permission.Id, _localizer["PermissionCreatedSuccessfully"] ?? "Permission created successfully");
-            
-            // DEBUG: Capture result details as JSON string for debugging
-            var debugResultJson = System.Text.Json.JsonSerializer.Serialize(new
-            {
-                StatusCode = result.StatusCode,
-                IsSuccess = result.IsSuccess,
-                Message = result.Message,
-                Data = result.Data,
-                Errors = result.Errors
-            });
-            var debugResultForInspector = debugResultJson; // Variable for debugger inspection
-            
-            return result;
+            return Result<Guid>.Created(permission.Id, _localizer["PermissionCreatedSuccessfully"] ?? "Permission created successfully");
         }
         catch (Exception ex)
         {
             return Result<Guid>.Failure(ex.Message);
         }
-    }
-
-    private string? ResolveClientInternalId(string realm, string clientId)
-    {
-        // Find tenant configuration for the realm
-        if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
-        {
-            return null;
-        }
-
-        // Check KeycloakFormbuilder
-        if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakFormbuilder.ClientInternalId;
-        }
-
-        // Check KeycloakWorkflow
-        if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-        {
-            return tenantConfig.KeycloakWorkflow.ClientInternalId;
-        }
-
-        return null;
     }
 }
 

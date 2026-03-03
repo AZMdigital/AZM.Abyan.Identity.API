@@ -13,6 +13,6 @@ public class CreateUserRequest
     public bool Enabled { get; set; } = true;
     [JsonIgnore]
     public bool EmailVerified { get; set; } = false;
-    public string? RealmName { get; set; } // Realm name to identify which realm the user belongs to
+    public string? OrganizationName { get; set; } // Realm name to identify which Organization the user belongs to
 }
 

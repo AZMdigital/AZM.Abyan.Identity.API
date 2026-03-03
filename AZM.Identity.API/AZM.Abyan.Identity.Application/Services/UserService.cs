@@ -3,6 +3,9 @@ using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
@@ -10,11 +13,13 @@ public class UserService : IUserService
 {
     private readonly IKeycloakService _keycloakService;
     private readonly KeycloakConfiguration _keycloakConfig;
+    private readonly IUserPermissionQueryService _userPermissionQueryService;
 
-    public UserService(IKeycloakService keycloakService, IOptions<KeycloakConfiguration> keycloakConfig)
+    public UserService(IKeycloakService keycloakService, IOptions<KeycloakConfiguration> keycloakConfig, IUserPermissionQueryService userPermissionQueryService)
     {
         _keycloakService = keycloakService;
         _keycloakConfig = keycloakConfig.Value;
+        _userPermissionQueryService = userPermissionQueryService;
     }
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
@@ -71,8 +76,28 @@ public class UserService : IUserService
         return await _keycloakService.GetUserByUsernameAsync(username, adminToken, cancellationToken);
     }
 
-    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, CancellationToken cancellationToken = default)
+
+    public async Task<UserInfoResponse?> GetCurrentUserInfoAsync(string userId, string accessToken, CancellationToken cancellationToken = default)
     {
+        // ===== Parse Organizations from JWT =====
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(accessToken);
+      
+        var orgClaim = jwt.Claims.FirstOrDefault(c => c.Type == "AbyanOrganization" || c.Type=="Organization")?.Value;
+        var organizationSummaries = new List<OrganizationSummary>();
+        if (!string.IsNullOrEmpty(orgClaim))
+        {
+            var orgs = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, OrganizationInfo>>(orgClaim);
+            if (orgs != null)
+            {
+                organizationSummaries = orgs.Select(o => new OrganizationSummary
+                {
+                    Id = o.Value.id,
+                    Name = o.Key
+                }).ToList();
+            }
+        }
+        // ===== Admin token for user info & roles =====
         var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
         // Get user info
@@ -83,12 +108,14 @@ public class UserService : IUserService
         var mappings = await _keycloakService.GetUserRoleMappingsAsync(userId, adminToken, cancellationToken);
 
         // Realm roles
-        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse{
-                         Id = r.Id,
-                         Name = r.Name,
-                         Description = r.Description,
-                         Composite = r.Composite,
-                         ContainerId = r.ContainerId}).ToList()
+        var realmRoles = mappings.RealmMappings?.Select(r => new RealmRoleResponse
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            Composite = r.Composite,
+            ContainerId = r.ContainerId
+        }).ToList()
                          ?? new List<RealmRoleResponse>();
         // Client roles
         var clientRoles = new Dictionary<string, List<ClientRoleResponse>>();
@@ -106,6 +133,11 @@ public class UserService : IUserService
                 }
             }
         }
+        // Permissions, Scopes, Resources, Policies: fetch only for the current user from the database via query service
+        var permissions = await _userPermissionQueryService.GetUserPermissionsAsync(userId, cancellationToken);
+        //var policies = await _userPermissionQueryService.GetUserPoliciesAsync(userId, cancellationToken);
+        //var resources = await _userPermissionQueryService.GetUserResourcesAsync(userId, cancellationToken);
+        //var scopes = await _userPermissionQueryService.GetUserScopesAsync(userId, cancellationToken);
         // Return full user info
         return new UserInfoResponse
         {
@@ -118,9 +150,16 @@ public class UserService : IUserService
             EmailVerified = user.EmailVerified,
             CreatedTimestamp = user.CreatedTimestamp,
             RealmRoles = realmRoles,
-            ClientRoles = clientRoles
+            ClientRoles = clientRoles,
+            Organizations = organizationSummaries,
+            Permissions = permissions
+            //,
+            //Scopes = scopes,
+            //Resources = resources,
+            //Policies = policies
         };
     }
+
     public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Username))

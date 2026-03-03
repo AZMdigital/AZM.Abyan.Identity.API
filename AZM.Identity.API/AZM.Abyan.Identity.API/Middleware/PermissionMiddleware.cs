@@ -49,11 +49,11 @@ public class PermissionMiddleware(RequestDelegate next)
         var action = actionDescriptor.ActionName.ToLower();
         var permission = $"api:{controller}:{action}";
 
-        //if (!context.User.IsInRole(permission))
-        //{
-        //    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-        //    return;
-        //}
+        if (!context.User.IsInRole(permission))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
 
         await _next(context);
     }

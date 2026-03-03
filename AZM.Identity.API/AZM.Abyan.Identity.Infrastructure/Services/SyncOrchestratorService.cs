@@ -1,10 +1,8 @@
-using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using AZM.Abyan.Identity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
@@ -15,11 +13,13 @@ public class SyncOrchestratorService : ISyncOrchestratorService
     private readonly IUserSyncService _userSyncService;
     private readonly IClientSyncService _clientSyncService;
     private readonly IRoleSyncService _roleSyncService;
+    private readonly IScopeSyncService _scopeSyncService;
+    private readonly IResourceSyncService _resourceSyncService;
+    private readonly IPolicySyncService _policySyncService;
     private readonly IPermissionKeycloakSyncService _permissionSyncService;
     private readonly ITenantUserRoleSyncService _tenantUserRoleSyncService;
     private readonly IRepository<Tenant, Guid> _tenantRepository;
     private readonly IRepository<Client, Guid> _clientRepository;
-    private readonly KeycloakConfigurations _keycloakConfigurations;
 
     public SyncOrchestratorService(
         IKeycloakService keycloakService,
@@ -27,22 +27,26 @@ public class SyncOrchestratorService : ISyncOrchestratorService
         IUserSyncService userSyncService,
         IClientSyncService clientSyncService,
         IRoleSyncService roleSyncService,
+        IScopeSyncService scopeSyncService,
+        IResourceSyncService resourceSyncService,
+        IPolicySyncService policySyncService,
         IPermissionKeycloakSyncService permissionSyncService,
         ITenantUserRoleSyncService tenantUserRoleSyncService,
         IRepository<Tenant, Guid> tenantRepository,
-        IRepository<Client, Guid> clientRepository,
-        IOptions<KeycloakConfigurations> keycloakConfigurations)
+        IRepository<Client, Guid> clientRepository)
     {
         _keycloakService = keycloakService;
         _tenantSyncService = tenantSyncService;
         _userSyncService = userSyncService;
         _clientSyncService = clientSyncService;
         _roleSyncService = roleSyncService;
+        _scopeSyncService = scopeSyncService;
+        _resourceSyncService = resourceSyncService;
+        _policySyncService = policySyncService;
         _permissionSyncService = permissionSyncService;
         _tenantUserRoleSyncService = tenantUserRoleSyncService;
         _tenantRepository = tenantRepository;
         _clientRepository = clientRepository;
-        _keycloakConfigurations = keycloakConfigurations.Value;
     }
 
     public async Task<SyncResult> SyncAllAsync(CancellationToken cancellationToken = default)
@@ -50,10 +54,10 @@ public class SyncOrchestratorService : ISyncOrchestratorService
         var result = new SyncResult();
 
         // Start transaction
-        IDbContextTransaction? transaction = null;
+        //IDbContextTransaction? transaction = null;
         try
         {
-            transaction = await _tenantRepository.BeginTransactionAsync(cancellationToken);
+            //transaction = await _tenantRepository.BeginTransactionAsync(cancellationToken);
 
             try
             {
@@ -67,18 +71,10 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                     result.Errors.AddRange(result.EntityResults["Tenants"].Errors);
                 }
 
-                // Get configured tenants and clients from appsettings.json
-                var configuredTenants = _keycloakConfigurations.Tenants.Keys.ToList();
-                var configuredClients = _keycloakConfigurations.Tenants
-                    .SelectMany(t => t.Value.KeycloakFormbuilder != null 
-                        ? new[] { new { TenantName = t.Key, ClientId = t.Value.KeycloakFormbuilder.ClientId } }
-                        : Enumerable.Empty<dynamic>())
-                    .ToList();
+                // Get all tenants to process
+                var tenants = await _tenantRepository.GetWhere().ToListAsync(cancellationToken);
 
-                // Get all tenants to process, but filter by configured tenants
-                var tenants = await _tenantRepository.GetWhere(t => configuredTenants.Contains(t.Name)).ToListAsync(cancellationToken);
-
-                // Process each configured tenant/realm
+                // Process each tenant/realm (all tenants now have IDs from Keycloak)
                 foreach (var tenant in tenants)
                 {
                     var realm = tenant.Name;
@@ -97,28 +93,10 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                         result.Errors.AddRange(result.EntityResults[$"Users-{realm}"].Errors);
                     }
 
-                    // Get configured client IDs for this tenant
-                    var tenantConfig = _keycloakConfigurations.Tenants.GetValueOrDefault(realm);
-                    var allowedClientIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    if (tenantConfig != null)
-                    {
-                        if (!string.IsNullOrEmpty(tenantConfig.KeycloakFormbuilder?.ClientId))
-                            allowedClientIds.Add(tenantConfig.KeycloakFormbuilder.ClientId);
-                        if (!string.IsNullOrEmpty(tenantConfig.KeycloakWorkflow?.ClientId))
-                            allowedClientIds.Add(tenantConfig.KeycloakWorkflow.ClientId);
-                    }
-
                     // Get all clients for this tenant
-                    var allClients = await _clientRepository
-                        .GetWhere(c => c.RealmId == tenant.Id)
-                        .ToListAsync(cancellationToken);
+                    var clients = await _clientRepository.GetWhere(c => c.RealmId == tenant.Id).ToListAsync(cancellationToken);
 
-                    // Filter clients by configured client IDs (match by Name which should be the ClientId)
-                    var clients = allClients
-                        .Where(c => allowedClientIds.Contains(c.Name))
-                        .ToList();
-
-                    // Process each configured client
+                    // Process each client (all clients now have IDs from Keycloak)
                     foreach (var client in clients)
                     {
                         var clientId = client.Id.ToString();
@@ -130,7 +108,28 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                             result.Errors.AddRange(result.EntityResults[$"Roles-{realm}-{client.Name}"].Errors);
                         }
 
-                        // Step 5: Sync Permissions (roles with Controller/Action attributes) for this client
+                        // Step 5: Sync Scopes for this client
+                        result.EntityResults[$"Scopes-{realm}-{client.Name}"] = await _scopeSyncService.SyncScopesAsync(realm, clientId, adminToken, cancellationToken);
+                        if (result.EntityResults[$"Scopes-{realm}-{client.Name}"].Errors.Any())
+                        {
+                            result.Errors.AddRange(result.EntityResults[$"Scopes-{realm}-{client.Name}"].Errors);
+                        }
+
+                        // Step 6: Sync Resources for this client
+                        result.EntityResults[$"Resources-{realm}-{client.Name}"] = await _resourceSyncService.SyncResourcesAsync(realm, clientId, adminToken, cancellationToken);
+                        if (result.EntityResults[$"Resources-{realm}-{client.Name}"].Errors.Any())
+                        {
+                            result.Errors.AddRange(result.EntityResults[$"Resources-{realm}-{client.Name}"].Errors);
+                        }
+
+                        // Step 7: Sync Policies for this client
+                        result.EntityResults[$"Policies-{realm}-{client.Name}"] = await _policySyncService.SyncPoliciesAsync(realm, clientId, adminToken, cancellationToken);
+                        if (result.EntityResults[$"Policies-{realm}-{client.Name}"].Errors.Any())
+                        {
+                            result.Errors.AddRange(result.EntityResults[$"Policies-{realm}-{client.Name}"].Errors);
+                        }
+
+                        // Step 8: Sync Permissions for this client
                         result.EntityResults[$"Permissions-{realm}-{client.Name}"] = await _permissionSyncService.SyncPermissionsAsync(realm, clientId, adminToken, cancellationToken);
                         if (result.EntityResults[$"Permissions-{realm}-{client.Name}"].Errors.Any())
                         {
@@ -138,7 +137,7 @@ public class SyncOrchestratorService : ISyncOrchestratorService
                         }
                     }
 
-                    // Step 6: Sync TenantUserRoles for this realm (must be last)
+                    // Step 9: Sync TenantUserRoles for this realm (must be last)
                     result.EntityResults[$"TenantUserRoles-{realm}"] = await _tenantUserRoleSyncService.SyncTenantUserRolesAsync(realm, adminToken, cancellationToken);
                     if (result.EntityResults[$"TenantUserRoles-{realm}"].Errors.Any())
                     {
@@ -148,40 +147,40 @@ public class SyncOrchestratorService : ISyncOrchestratorService
 
                 result.Success = !result.Errors.Any();
 
-                if (result.Success)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
-                else
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
+                //if (result.Success)
+                //{
+                //    await transaction.CommitAsync(cancellationToken);
+                //}
+                //else
+                //{
+                //    await transaction.RollbackAsync(cancellationToken);
+                //}
             }
             catch (Exception ex)
             {
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
+                //if (transaction != null)
+                //{
+                //    await transaction.RollbackAsync(cancellationToken);
+                //}
                 result.Success = false;
                 result.Errors.Add($"Critical error during sync: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
-            if (transaction != null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-            }
+            //if (transaction != null)
+            //{
+            //    await transaction.RollbackAsync(cancellationToken);
+            //}
             result.Success = false;
             result.Errors.Add($"Critical error starting transaction: {ex.Message}");
         }
         finally
         {
-            if (transaction != null)
-            {
-                await transaction.DisposeAsync();
-            }
+            //if (transaction != null)
+            //{
+            //    await transaction.DisposeAsync();
+            //}
         }
 
         return result;

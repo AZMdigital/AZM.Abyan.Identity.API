@@ -1,16 +1,19 @@
-﻿using System;
+﻿using AZM.Abyan.Identity.Application.Common.Interfaces;
+using AZM.Abyan.Identity.Application.Models;
+using AZM.Abyan.Identity.Application.Services;
+using AZM.Abyan.Identity.Domain.Interfaces;
+using AZM.Abyan.Identity.Infrastructure.Security.Authorization;
+using AZM.Abyan.Identity.Infrastructure.Services;
+using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
+using AZM.Abyan.Identity.Persistence.Repositories;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using AZM.Abyan.Identity.Application.Models;
-using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Interfaces;
-using AZM.Abyan.Identity.Infrastructure.Services;
-using AZM.Abyan.Identity.Persistence.Persistence.Repositories;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace AZM.Abyan.Identity.Infrastructure.Common
 {
@@ -53,17 +56,21 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             // KeycloakConfigurations binding - binds the entire KeycloakConfigurations section
             services.Configure<KeycloakConfigurations>(
                 configuration.GetSection("KeycloakConfigurations"));
-            
+
+            services.Configure<KeycloakOptions>(
+                configuration.GetSection("Keycloak"));
             // Application Services
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<IClientService, ClientService>();
-            services.AddScoped<IGroupService, GroupService>();
+            services.AddScoped<IOrganizationService, OrganizationService>();
+            //services.AddScoped<IGroupService, GroupService>();
             services.AddScoped<IRealmAdminService, RealmAdminService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IPermissionSyncService, PermissionSyncService>();
             services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<ITenantRepository, TenantRepository>();
             services.AddScoped<IRealmResolverService, RealmResolverService>();
             // Sync Services
             services.AddScoped<ITenantSyncService, TenantSyncService>();
@@ -72,8 +79,25 @@ namespace AZM.Abyan.Identity.Infrastructure.Common
             services.AddScoped<IRoleSyncService, RoleSyncService>();
             services.AddScoped<IPermissionKeycloakSyncService, PermissionKeycloakSyncService>();
             services.AddScoped<ITenantUserRoleSyncService, TenantUserRoleSyncService>();
+            // Added missing sync services
+            services.AddScoped<IScopeSyncService, ScopeSyncService>();
+            services.AddScoped<IResourceSyncService, ResourceSyncService>();
+            services.AddScoped<IPolicySyncService, PolicySyncService>();
+            
             services.AddScoped<ISyncOrchestratorService, SyncOrchestratorService>();
+  
+            services.AddScoped<ITenantProvider, JwtTenantProvider>();
 
+            services.AddScoped<IUmaAuthorizationService, KeycloakUmaAuthorizationService>();
+            services.AddScoped<IUserPermissionQueryService, UserPermissionQueryService>();
+            services.AddScoped<IEncryptionService, EncryptionService>();
+
+            // Licensing Services
+            services.AddSingleton<IRsaKeyProvider, RsaKeyProvider>();
+            services.AddSingleton<IJwtIssuerService, JwtIssuerService>();
+            services.AddHttpClient<IKeycloakVerifier, KeycloakVerifier>();
+            services.AddScoped<ILicenseService, LicenseService>();
+            services.AddScoped<TokenService>();
             // HttpClient
             services.AddHttpClient<IKeycloakService, KeycloakService>((sp, client) =>
             {

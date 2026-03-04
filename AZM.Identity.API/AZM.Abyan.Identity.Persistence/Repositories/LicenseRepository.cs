@@ -13,7 +13,8 @@ public class LicenseRepository(IdentityDbContext db) : ILicenseRepository
     public Task<License?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         db.Licenses
           .Include(l => l.Tenant)
-          .Include(l => l.Client)
+          .Include(l => l.LicenseClients)
+          .ThenInclude(lc => lc.Client)
           .FirstOrDefaultAsync(l => l.Id == id, ct);
 
     public async Task AddAsync(License license, CancellationToken ct = default)

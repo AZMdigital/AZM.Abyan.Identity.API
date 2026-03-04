@@ -28,11 +28,16 @@ public class GetSignedLicenseQueryHandler(
             if (license == null)
                 return Result<LicenseFileDto>.NotFound(_localizer["LicenseNotFound"] ?? "License not found");
 
+            var clientNames = license.LicenseClients?
+                .Select(lc => lc.Client?.Name ?? "")
+                .Where(name => !string.IsNullOrEmpty(name))
+                .ToList() ?? new List<string>();
+
             var dto = new LicenseFileDto
             {
                 LicenseId = license.Id.ToString(),
                 TenantId = license.TenantId.ToString(),
-                ClientName = license.Client?.Name ?? "",
+                ClientNames = clientNames,
                 Package = license.PackageName,
                 ExpiryDate = license.ExpiryDate
             };

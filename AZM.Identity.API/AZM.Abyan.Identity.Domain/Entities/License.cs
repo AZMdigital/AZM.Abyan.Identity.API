@@ -6,8 +6,6 @@ public class License : BaseEntity
 {
     public Guid     TenantId       { get; set; }
     public Tenant   Tenant         { get; set; } = null!;
-    public Guid     ClientId       { get; set; }
-    public Client   Client         { get; set; } = null!;
     public string   LicenseKeyHash     { get; set; } = null!;
     public DateTime IssuedAt           { get; set; }
     public DateTime ExpiryDate         { get; set; }
@@ -17,10 +15,12 @@ public class License : BaseEntity
     public string?  ServerIps          { get; set; }
     public bool     IsActive           { get; set; }= false;
 
+    // Many-to-many relationship with Client
+    public ICollection<LicenseClient> LicenseClients { get; set; } = new List<LicenseClient>();
+
     public static License Create(
         Guid     id,
         Guid     tenantId,
-        Guid     clientId,
         string   licenseKeyHash,
         string   packageName,
         DateTime expiryDate)
@@ -29,13 +29,29 @@ public class License : BaseEntity
         {
             Id             = id,
             TenantId       = tenantId,
-            ClientId       = clientId,
             LicenseKeyHash = licenseKeyHash,
             PackageName    = packageName,
             ExpiryDate     = expiryDate,
             IssuedAt       = DateTime.UtcNow,
             IsActive       = false,
         };
+    }
+
+    public void AddClient(Guid clientId)
+    {
+        if (!LicenseClients.Any(lc => lc.ClientId == clientId))
+        {
+            LicenseClients.Add(new LicenseClient { LicenseId = Id, ClientId = clientId });
+        }
+    }
+
+    public void RemoveClient(Guid clientId)
+    {
+        var licenseClient = LicenseClients.FirstOrDefault(lc => lc.ClientId == clientId);
+        if (licenseClient != null)
+        {
+            LicenseClients.Remove(licenseClient);
+        }
     }
 
     public void Activate()
@@ -63,5 +79,4 @@ public class License : BaseEntity
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Any(d => string.Equals(d, currentDomain, StringComparison.OrdinalIgnoreCase));
     }
-
 }

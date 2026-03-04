@@ -31,8 +31,8 @@ public class ActivateLicenseHandler(
             ?? throw new InvalidOperationException(localizer["InvalidLicenseFileFormat"]);
 
         // 2. Verify RSA signature against the global public key
-        //if (!licenseService.ValidateSignature(request.LicenseFile, rsaKeyProvider.GetPublicKeyPem()))
-        //    throw new InvalidOperationException(localizer["LicenseSignatureInvalid"]);
+        if (!licenseService.ValidateSignature(request.LicenseFile, rsaKeyProvider.GetPublicKeyPem()))
+            throw new InvalidOperationException(localizer["LicenseSignatureInvalid"]);
 
         // 3. Verify Tenant exists in DB
         if (!Guid.TryParse(dto.TenantId, out var tenantGuid))
@@ -49,15 +49,15 @@ public class ActivateLicenseHandler(
                 ?? throw new InvalidOperationException(string.Format(localizer["ClientNotFound"], clientName));
             
             // Keycloak cross-check for this client
-            //if (!await keycloakVerifier.ClientExistsAsync(tenant.Name, client.Name, ct))
-            //    throw new InvalidOperationException(localizer["ClientNotFoundInRealm"]);
+            if (!await keycloakVerifier.ClientExistsAsync(tenant.Name, client.Name, ct))
+                throw new InvalidOperationException(localizer["ClientNotFoundInRealm"]);
             
             clients.Add(client);
         }
 
         // 5. Keycloak cross-check (Tenant realm)
-        //if (!await keycloakVerifier.TenantExistsAsync(tenant.Name, ct))
-        //    throw new InvalidOperationException(localizer["TenantRealmNotFound"]);
+        if (!await keycloakVerifier.TenantExistsAsync(tenant.Name, ct))
+            throw new InvalidOperationException(localizer["TenantRealmNotFound"]);
 
         if (!Guid.TryParse(dto.LicenseId, out var licenseIdGuid))
             throw new InvalidOperationException(localizer["InvalidLicenseIdFormat"]);
@@ -68,8 +68,8 @@ public class ActivateLicenseHandler(
         if (existing is not null)
         {
             // Tamper detection
-            //if (!licenseService.VerifyHash(request.LicenseFile, existing.LicenseKeyHash))
-            //    throw new InvalidOperationException(localizer["LicensePayloadTampered"]);
+            if (!licenseService.VerifyHash(request.LicenseFile, existing.LicenseKeyHash))
+                throw new InvalidOperationException(localizer["LicensePayloadTampered"]);
 
             LicenseDomainService.EnsureIsActive(existing);
             LicenseDomainService.EnsureNotExpired(existing);

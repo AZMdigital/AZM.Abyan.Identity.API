@@ -29,7 +29,7 @@ public class IdentityDbContext : DbContext
     public DbSet<TenantUserPermission> TenantUserPermissions { get; set; }
     public DbSet<License> Licenses { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
-
+    public DbSet<LicenseClient> LicenseClients { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -40,6 +40,22 @@ public class IdentityDbContext : DbContext
         modelBuilder.ApplyConfiguration(new RoleConfiguration());
         modelBuilder.ApplyConfiguration(new TenantConfiguration());
         modelBuilder.ApplyConfiguration(new LicenseConfiguration());
+
+        // Configure LicenseClient many-to-many relationship
+        modelBuilder.Entity<LicenseClient>()
+            .HasKey(lc => new { lc.LicenseId, lc.ClientId });
+
+        modelBuilder.Entity<LicenseClient>()
+            .HasOne(lc => lc.License)
+            .WithMany(l => l.LicenseClients)
+            .HasForeignKey(lc => lc.LicenseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LicenseClient>()
+            .HasOne(lc => lc.Client)
+            .WithMany(c => c.LicenseClients)
+            .HasForeignKey(lc => lc.ClientId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

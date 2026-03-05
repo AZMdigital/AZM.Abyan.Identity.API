@@ -73,15 +73,18 @@ public class LicensesController : ControllerBase
     /// <summary>
     /// Create a new license
     /// </summary>
+    /// <summary>
+    /// Create a new license
+    /// </summary>
     [HttpPost]
-    public async Task<ActionResult> CreateLicense([FromBody] CreateLicenseRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<LicenseFileDto>> CreateLicense([FromBody] CreateLicenseRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var command = new CreateLicenseCommand
             {
                 TenantId = request.TenantId,
-                ClientId = request.ClientId,
+                ClientNames = request.ClientNames ?? new List<string>(),
                 ExpiryDate = request.ExpiryDate,
                 MaxUsers = request.MaxUsers,
                 PackageName = request.PackageName,
@@ -97,8 +100,6 @@ public class LicensesController : ControllerBase
             return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
         }
     }
-
-    /// <summary>
     /// Update an existing license
     /// </summary>
     [HttpPut("{id}")]

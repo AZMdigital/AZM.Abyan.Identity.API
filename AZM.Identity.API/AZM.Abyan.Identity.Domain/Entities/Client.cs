@@ -8,12 +8,16 @@ using AZM.Abyan.Identity.Domain.Entities.Base;
 
 namespace AZM.Abyan.Identity.Domain.Entities
 {
-    public class Client:BaseEntity
+    public class Client : BaseEntity
     {
-        public string Name {  get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public Guid RealmId { get; set; }
+
         [ForeignKey("RealmId")]
-        public Tenant tenant { get; set; } = null!;
+        public Tenant Tenant { get; set; } = null!;
+
+        // Many-to-many relationship with License
+        public ICollection<LicenseClient> LicenseClients { get; set; } = new List<LicenseClient>();
     }
 }

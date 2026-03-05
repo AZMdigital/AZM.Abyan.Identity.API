@@ -36,9 +36,10 @@ public class LicenseConfiguration : IEntityTypeConfiguration<License>
             .HasForeignKey(x => x.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(x => x.Client)
-            .WithMany() // Or WithMany(c => c.Licenses) if Client has a collection
-            .HasForeignKey(x => x.ClientId)
+        // Many-to-many relationship with Client through LicenseClient
+        builder.HasMany(x => x.LicenseClients)
+            .WithOne(lc => lc.License)
+            .HasForeignKey(lc => lc.LicenseId)
             .OnDelete(DeleteBehavior.Cascade);
 
 

@@ -36,7 +36,7 @@ namespace AZM.Abyan.Identity.Application.Services
             _localizer = localizer;
         }
 
-        public async Task<ActivateLicenseResponse> ActivateLicenseAsync(License license, Client client, CancellationToken ct)
+        public async Task<ActivateLicenseResponse> ActivateLicenseAsync(License license, List<Client> clients, CancellationToken ct)
         {
             // Generate refresh token
             var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
@@ -48,7 +48,7 @@ namespace AZM.Abyan.Identity.Application.Services
 
             // Return response with both tokens
             var accessTokenExpiry = DateTime.UtcNow.AddMinutes(5);
-            var accessToken = jwtIssuer.IssueToken(license, client);
+            var accessToken = jwtIssuer.IssueToken(license, clients);
 
             return new ActivateLicenseResponse(
                 AccessToken: accessToken,
@@ -82,7 +82,9 @@ namespace AZM.Abyan.Identity.Application.Services
 
             // 3. Generate new access token
             var accessTokenExpiry = DateTime.UtcNow.AddHours(1);
-            var newAccessToken = jwtIssuer.IssueToken(license.Id, accessTokenExpiry);
+            var clients = license.LicenseClients.Select(lc => lc.Client)
+                         .Where(c => c != null).ToList();
+            var newAccessToken = jwtIssuer.IssueToken(license, clients);
 
             // 4. Revoke old refresh token and create new one (token rotation)
             storedRefreshToken.Revoke();

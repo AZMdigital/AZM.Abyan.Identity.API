@@ -1,9 +1,11 @@
 using AZM.Abyan.Identity.Application.DTOs.Licenses;
+using AZM.Abyan.Identity.Application.DTOs.Licenses;
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Queries.License.GetAllLicenses;
@@ -19,9 +21,23 @@ public class GetAllLicensesQueryHandler(
     {
         try
         {
-            var licenses = _repository.GetWhere(null);
+            var licenses = await _repository.GetWhere(null)
+                          .Include(l => l.LicenseClients).ThenInclude(lc => lc.Client)
+                         .AsNoTracking().ToListAsync(cancellationToken);
 
-            var responses = licenses.Adapt<List<LicenseResponse>>();
+            var responses = licenses.Select(license =>
+            {
+                var response = license.Adapt<LicenseResponse>();
+                
+                // Map client names from LicenseClients
+                response.ClientNames = license.LicenseClients?
+                    .Select(lc => lc.Client?.Name ?? "")
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToList() ?? new List<string>();
+                
+                return response;
+            }).ToList();
+            
             return Result<List<LicenseResponse>>.Success(responses);
         }
         catch (Exception ex)

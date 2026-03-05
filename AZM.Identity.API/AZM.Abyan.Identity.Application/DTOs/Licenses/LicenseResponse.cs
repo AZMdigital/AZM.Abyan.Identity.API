@@ -4,7 +4,7 @@ public class LicenseResponse
 {
     public Guid Id { get; set; }
     public Guid TenantId { get; set; }
-    public Guid ClientId { get; set; }
+    public List<string> ClientNames { get; set; } = new();
     public string LicenseKeyHash { get; set; } = string.Empty;
     public string PublicKey { get; set; } = string.Empty;
     public DateTime IssuedAt { get; set; }

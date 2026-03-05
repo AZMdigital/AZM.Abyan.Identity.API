@@ -36,7 +36,7 @@ namespace AZM.Abyan.Identity.Persistence.Common
             services.AddScoped<IRepository<Policy, Guid>, Repository<Policy, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<License, Guid>, Repository<License, Guid, IdentityDbContext>>();
             services.AddScoped<IRepository<RefreshToken, Guid>, Repository<RefreshToken, Guid, IdentityDbContext>>();
-
+            services.AddScoped<IRepository<LicenseClient, (Guid, Guid)>, Repository<LicenseClient, (Guid, Guid), IdentityDbContext>>();
             // Licensing specific repository
             services.AddScoped<ILicenseRepository, LicenseRepository>();
 

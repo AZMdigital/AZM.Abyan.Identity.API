@@ -1,6 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.Groups;
-using AZM.Abyan.Identity.Application.DTOs.Users;
-
 namespace AZM.Abyan.Identity.Application.Services;
 
 //public interface IGroupService

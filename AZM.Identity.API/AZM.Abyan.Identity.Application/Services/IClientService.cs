@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 

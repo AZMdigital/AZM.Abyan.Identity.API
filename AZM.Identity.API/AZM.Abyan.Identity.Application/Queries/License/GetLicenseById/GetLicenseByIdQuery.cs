@@ -3,12 +3,7 @@ using MediatR;
 
 namespace AZM.Abyan.Identity.Application.Queries.License.GetLicenseById;
 
-public class GetLicenseByIdQuery : IRequest<Result<DTOs.Licenses.LicenseResponse>>
+public class GetLicenseByIdQuery(Guid licenseId) : IRequest<Result<DTOs.Licenses.LicenseResponse>>
 {
-    public Guid LicenseId { get; set; }
-
-    public GetLicenseByIdQuery(Guid licenseId)
-    {
-        LicenseId = licenseId;
-    }
+    public Guid LicenseId { get; set; } = licenseId;
 }

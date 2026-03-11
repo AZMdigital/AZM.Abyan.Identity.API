@@ -1,5 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.Roles;
-using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -8,30 +6,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class TenantUserRoleSyncService : ITenantUserRoleSyncService
+public class TenantUserRoleSyncService(
+    IKeycloakService keycloakService,
+    IRepository<TenantUserRole, Guid> tenantUserRoleRepository,
+    IRepository<User, Guid> userRepository,
+    IRepository<Role, Guid> roleRepository,
+    IRepository<Tenant, Guid> tenantRepository,
+    IdentityDbContext dbContext) : ITenantUserRoleSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<TenantUserRole, Guid> _tenantUserRoleRepository;
-    private readonly IRepository<User, Guid> _userRepository;
-    private readonly IRepository<Role, Guid> _roleRepository;
-    private readonly IRepository<Tenant, Guid> _tenantRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public TenantUserRoleSyncService(
-        IKeycloakService keycloakService,
-        IRepository<TenantUserRole, Guid> tenantUserRoleRepository,
-        IRepository<User, Guid> userRepository,
-        IRepository<Role, Guid> roleRepository,
-        IRepository<Tenant, Guid> tenantRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _tenantUserRoleRepository = tenantUserRoleRepository;
-        _userRepository = userRepository;
-        _roleRepository = roleRepository;
-        _tenantRepository = tenantRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<TenantUserRole, Guid> _tenantUserRoleRepository = tenantUserRoleRepository;
+    private readonly IRepository<User, Guid> _userRepository = userRepository;
+    private readonly IRepository<Role, Guid> _roleRepository = roleRepository;
+    private readonly IRepository<Tenant, Guid> _tenantRepository = tenantRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncTenantUserRolesAsync(string realm, string adminToken, CancellationToken cancellationToken = default)
     {

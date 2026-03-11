@@ -23,7 +23,7 @@ public class DeleteRoleCommandHandler(
             var role = await _roleRepository.GetByIdAsync(request.RoleId, cancellationToken);
             if (role == null)
             {
-                return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? "Role not found");
+                return Result<bool>.NotFound(_localizer["RoleNotFound"]);
             }
 
             // Get admin token
@@ -42,7 +42,7 @@ public class DeleteRoleCommandHandler(
             _roleRepository.Update(role);
             await _roleRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Deleted(true, _localizer["RoleDeletedSuccessfully"] ?? "Role deleted successfully");
+            return Result<bool>.Deleted(true, _localizer["RoleDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {

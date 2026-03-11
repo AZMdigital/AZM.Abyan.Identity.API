@@ -23,7 +23,7 @@ public class DeleteScopeCommandHandler(
             var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
             if (scope == null)
             {
-                return Result<bool>.NotFound(_localizer["ScopeNotFound"] ?? "Scope not found");
+                return Result<bool>.NotFound(_localizer["ScopeNotFound"]);
             }
 
             // Get admin token
@@ -42,7 +42,7 @@ public class DeleteScopeCommandHandler(
             _scopeRepository.Update(scope);
             await _scopeRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Deleted(true, _localizer["ScopeDeletedSuccessfully"] ?? "Scope deleted successfully");
+            return Result<bool>.Deleted(true, _localizer["ScopeDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {

@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -7,24 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class ResourceSyncService : IResourceSyncService
+public class ResourceSyncService(
+    IKeycloakService keycloakService,
+    IRepository<Resource, Guid> resourceRepository,
+    IRepository<Scope, Guid> scopeRepository,
+    IdentityDbContext dbContext) : IResourceSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<Resource, Guid> _resourceRepository;
-    private readonly IRepository<Scope, Guid> _scopeRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public ResourceSyncService(
-        IKeycloakService keycloakService,
-        IRepository<Resource, Guid> resourceRepository,
-        IRepository<Scope, Guid> scopeRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _resourceRepository = resourceRepository;
-        _scopeRepository = scopeRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<Resource, Guid> _resourceRepository = resourceRepository;
+    private readonly IRepository<Scope, Guid> _scopeRepository = scopeRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncResourcesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {

@@ -3,14 +3,9 @@ using AZM.Abyan.Identity.Application.DTOs.Users;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
-public class OrganizationService : IOrganizationService
+public class OrganizationService(IKeycloakService keycloakService) : IOrganizationService
 {
-    private readonly IKeycloakService _keycloakService;
-
-    public OrganizationService(IKeycloakService keycloakService)
-    {
-        _keycloakService = keycloakService;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
 
     public async Task<List<OrganizationResponse>> GetOrganizationsAsync(string realm, CancellationToken cancellationToken = default)
     {

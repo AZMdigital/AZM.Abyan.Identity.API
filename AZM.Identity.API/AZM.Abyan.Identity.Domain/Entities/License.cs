@@ -16,7 +16,7 @@ public class License : BaseEntity
     public bool     IsActive           { get; set; }= false;
 
     // Many-to-many relationship with Client
-    public ICollection<LicenseClient> LicenseClients { get; set; } = new List<LicenseClient>();
+    public ICollection<LicenseClient> LicenseClients { get; set; } = [];
 
     public static License Create(
         Guid     id,

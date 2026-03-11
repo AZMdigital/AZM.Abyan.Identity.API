@@ -1,132 +1,87 @@
+using AZM.Abyan.Identity.API.Controllers.Base;
 using AZM.Abyan.Identity.Application.Commands.Policy.Create;
 using AZM.Abyan.Identity.Application.Commands.Policy.Delete;
 using AZM.Abyan.Identity.Application.Commands.Policy.Update;
 using AZM.Abyan.Identity.Application.DTOs.Policies;
-using AZM.Abyan.Identity.Application.Resources;
-using AZM.Abyan.Identity.Application.Services;
-using MediatR;
+using AZM.Abyan.Identity.Application.Queries.Policy.GetPolicies;
+using AZM.Abyan.Identity.Application.Queries.Policy.GetPolicyByName;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class PoliciesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer) : ControllerBase
+public class PoliciesController : BaseController
 {
-    private readonly IMediator _mediator = mediator;
-    private readonly IKeycloakService _keycloakService = keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
-
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> GetPolicies(string realm, string clientId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            var policies = await _keycloakService.GetAllPoliciesAsync(realm, clientId, adminToken, cancellationToken);
-            return Ok(policies);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetPoliciesQuery(realm, clientId), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{policyName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetPolicyByName(string realm, string clientId, string policyName, CancellationToken cancellationToken)
     {
-        try
-        {
-            var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            var policy = await _keycloakService.GetPolicyAsync(realm, clientId, policyName, adminToken, cancellationToken);
-            
-            if (policy == null)
-                return NotFound(new { message = _localizer["PolicyNotFound"] });
-
-            return Ok(policy);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetPolicyByNameQuery(realm, clientId, policyName), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreatePolicy(string realm, string clientId, [FromBody] CreatePolicyRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new CreatePolicyCommand
         {
-            var command = new CreatePolicyCommand
-            {
-                CreatePolicyRequest = request,
-                RealmName = realm,
-                KeycloakClientId = clientId
-            };
+            CreatePolicyRequest = request,
+            RealmName = realm,
+            KeycloakClientId = clientId
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("{policyId}")]
-    public async Task<ActionResult> UpdatePolicy(string realm, string clientId, string policyId, [FromBody] UpdatePolicyRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdatePolicy(string realm, string clientId, Guid policyId, [FromBody] UpdatePolicyRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new UpdatePolicyCommand
         {
-            if (!Guid.TryParse(policyId, out var policyIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidPolicyId"] });
-            }
+            PolicyId = policyId,
+            UpdatePolicyRequest = request,
+            RealmName = realm,
+            KeycloakClientId = clientId,
+            KeycloakPolicyId = policyId.ToString()
+        };
 
-            // Get Keycloak policy ID - you may need to store this mapping or fetch it
-            var command = new UpdatePolicyCommand
-            {
-                PolicyId = policyIdGuid,
-                UpdatePolicyRequest = request,
-                RealmName = realm,
-                KeycloakClientId = clientId,
-                KeycloakPolicyId = policyId // Assuming policyId is Keycloak policy ID (string)
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{policyId}")]
-    public async Task<ActionResult> DeletePolicy(string realm, string clientId, string policyId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeletePolicy(string realm, string clientId, Guid policyId, CancellationToken cancellationToken)
     {
-        try
+        var command = new DeletePolicyCommand
         {
-            if (!Guid.TryParse(policyId, out var policyIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidPolicyId"] });
-            }
+            PolicyId = policyId,
+            RealmName = realm,
+            KeycloakClientId = clientId,
+            KeycloakPolicyId = policyId.ToString()
+        };
 
-            // Get Keycloak policy ID - you may need to store this mapping or fetch it
-            var command = new DeletePolicyCommand
-            {
-                PolicyId = policyIdGuid,
-                RealmName = realm,
-                KeycloakClientId = clientId,
-                KeycloakPolicyId = policyId // Assuming policyId is Keycloak policy ID (string)
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 }

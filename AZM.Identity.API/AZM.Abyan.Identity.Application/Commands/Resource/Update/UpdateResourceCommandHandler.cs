@@ -27,7 +27,7 @@ public class UpdateResourceCommandHandler(
             var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
             if (resource == null)
             {
-                return Result<bool>.NotFound(_localizer["ResourceNotFound"] ?? "Resource not found");
+                return Result<bool>.NotFound(_localizer["ResourceNotFound"]);
             }
 
             // Get admin token
@@ -78,7 +78,7 @@ public class UpdateResourceCommandHandler(
             _resourceRepository.Update(resource);
             await _resourceRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Updated(true, _localizer["ResourceUpdatedSuccessfully"] ?? "Resource updated successfully");
+            return Result<bool>.Updated(true, _localizer["ResourceUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

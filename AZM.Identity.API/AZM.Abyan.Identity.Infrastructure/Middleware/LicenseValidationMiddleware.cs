@@ -40,7 +40,7 @@ public class LicenseValidationMiddleware(
                 .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == licenseId, ctx.RequestAborted);
 
-            if (!license.IsActive)
+            if (!license?.IsActive ?? true)
             {
                 logger.LogWarning("Inactive or revoked license {Id} blocked", licenseId);
                 await Forbid(ctx, "License is not active or has been revoked."); return;

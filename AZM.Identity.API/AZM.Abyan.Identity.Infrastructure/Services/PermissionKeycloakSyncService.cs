@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -7,30 +6,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class PermissionKeycloakSyncService : IPermissionKeycloakSyncService
+public class PermissionKeycloakSyncService(
+    IKeycloakService keycloakService,
+    IRepository<Permission, Guid> permissionRepository,
+    IRepository<Scope, Guid> scopeRepository,
+    IRepository<Resource, Guid> resourceRepository,
+    IRepository<Policy, Guid> policyRepository,
+    IdentityDbContext dbContext) : IPermissionKeycloakSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<Permission, Guid> _permissionRepository;
-    private readonly IRepository<Scope, Guid> _scopeRepository;
-    private readonly IRepository<Resource, Guid> _resourceRepository;
-    private readonly IRepository<Policy, Guid> _policyRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public PermissionKeycloakSyncService(
-        IKeycloakService keycloakService,
-        IRepository<Permission, Guid> permissionRepository,
-        IRepository<Scope, Guid> scopeRepository,
-        IRepository<Resource, Guid> resourceRepository,
-        IRepository<Policy, Guid> policyRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _permissionRepository = permissionRepository;
-        _scopeRepository = scopeRepository;
-        _resourceRepository = resourceRepository;
-        _policyRepository = policyRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<Permission, Guid> _permissionRepository = permissionRepository;
+    private readonly IRepository<Scope, Guid> _scopeRepository = scopeRepository;
+    private readonly IRepository<Resource, Guid> _resourceRepository = resourceRepository;
+    private readonly IRepository<Policy, Guid> _policyRepository = policyRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncPermissionsAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {

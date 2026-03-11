@@ -18,7 +18,7 @@ public class UpdatePermissionCommandHandler(
         var permission = await _permissionRepository.GetByIdAsync(request.PermissionId, cancellationToken);
         if (permission == null)
         {
-            return Result<bool>.NotFound(_localizer["PermissionNotFound"] ?? "Permission not found");
+            return Result<bool>.NotFound(_localizer["PermissionNotFound"]);
         }
 
         // Update only provided fields
@@ -53,7 +53,7 @@ public class UpdatePermissionCommandHandler(
         _permissionRepository.Update(permission);
         await _permissionRepository.SaveChangesAsync(cancellationToken);
 
-        return Result<bool>.Updated(true, _localizer["PermissionUpdatedSuccessfully"] ?? "Permission updated successfully");
+        return Result<bool>.Updated(true, _localizer["PermissionUpdatedSuccessfully"]);
     }
 }
 

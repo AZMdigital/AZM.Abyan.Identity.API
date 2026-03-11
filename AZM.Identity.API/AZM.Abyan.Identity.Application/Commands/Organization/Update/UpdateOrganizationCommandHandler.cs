@@ -7,21 +7,14 @@ using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Commands.Organization.Update;
 
-public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizationCommand, Result<bool>>
+public class UpdateOrganizationCommandHandler(
+    ITenantRepository tenantRepository,
+    IKeycloakService keycloakService,
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<UpdateOrganizationCommand, Result<bool>>
 {
-    private readonly ITenantRepository _tenantRepository;
-    private readonly IKeycloakService _keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public UpdateOrganizationCommandHandler(
-        ITenantRepository tenantRepository,
-        IKeycloakService keycloakService,
-        IStringLocalizer<SharedResource> localizer)
-    {
-        _tenantRepository = tenantRepository;
-        _keycloakService = keycloakService;
-        _localizer = localizer;
-    }
+    private readonly ITenantRepository _tenantRepository = tenantRepository;
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     public async Task<Result<bool>> Handle(UpdateOrganizationCommand request, CancellationToken cancellationToken)
     {

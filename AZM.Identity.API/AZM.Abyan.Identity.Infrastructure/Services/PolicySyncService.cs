@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -8,24 +7,16 @@ using System.Text.Json;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class PolicySyncService : IPolicySyncService
+public class PolicySyncService(
+    IKeycloakService keycloakService,
+    IRepository<Policy, Guid> policyRepository,
+    IRepository<Role, Guid> roleRepository,
+    IdentityDbContext dbContext) : IPolicySyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<Policy, Guid> _policyRepository;
-    private readonly IRepository<Role, Guid> _roleRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public PolicySyncService(
-        IKeycloakService keycloakService,
-        IRepository<Policy, Guid> policyRepository,
-        IRepository<Role, Guid> roleRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _policyRepository = policyRepository;
-        _roleRepository = roleRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<Policy, Guid> _policyRepository = policyRepository;
+    private readonly IRepository<Role, Guid> _roleRepository = roleRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncPoliciesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {
@@ -113,7 +104,7 @@ public class PolicySyncService : IPolicySyncService
                     localPolicy.RoleId = role.Id;
                     localPolicy.UpdatedAt = DateTime.UtcNow;
                     localPolicy.UpdatedBy = Guid.Empty;
-                     _policyRepository.Update(localPolicy);
+                    _policyRepository.Update(localPolicy);
                     result.Updated++;
                 }
             }

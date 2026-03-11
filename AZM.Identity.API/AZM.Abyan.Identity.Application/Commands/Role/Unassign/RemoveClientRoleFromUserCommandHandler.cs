@@ -29,19 +29,19 @@ public class RemoveClientRoleFromUserCommandHandler(
             var tenantId = await _realmResolverService.ResolveRealmIdAsync(request.Realm, cancellationToken);
             if (!tenantId.HasValue)
             {
-                return Result<bool>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.Realm}' not found");
+                return Result<bool>.Failure(_localizer["TenantNotFound"]);
             }
 
             // Parse UserId
             if (!Guid.TryParse(request.AssignRoleRequest.UserId, out var userId))
             {
-                return Result<bool>.Failure(_localizer["InvalidUserId"] ?? "Invalid user ID format");
+                return Result<bool>.Failure(_localizer["InvalidUserId"]);
             }
 
             // Parse ClientId to Guid
             if (!Guid.TryParse(request.AssignRoleRequest.ClientId, out var clientIdGuid))
             {
-                return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
+                return Result<bool>.Failure(_localizer["InvalidClientId"]);
             }
                 // Get role by name and clientId from database
                 var role = await _roleRepository
@@ -50,7 +50,7 @@ public class RemoveClientRoleFromUserCommandHandler(
 
                 if (role == null)
                 {
-                    return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? $"Role '{request.AssignRoleRequest.RoleName}' not found for client '{request.AssignRoleRequest.ClientId}'");
+                    return Result<bool>.NotFound(_localizer["RoleNotFound"]);
                 }
 
                 // Find existing assignment
@@ -60,7 +60,7 @@ public class RemoveClientRoleFromUserCommandHandler(
 
                 if (existingAssignment == null)
                 {
-                    return Result<bool>.NotFound(_localizer["RoleAssignmentNotFound"] ?? "Role assignment not found");
+                    return Result<bool>.NotFound(_localizer["RoleAssignmentNotFound"]);
                 }
 
                 // Remove role from Keycloak first
@@ -78,7 +78,7 @@ public class RemoveClientRoleFromUserCommandHandler(
                 _tenantUserRoleRepository.Update(existingAssignment);
                 await _tenantUserRoleRepository.SaveChangesAsync(cancellationToken);
 
-                return Result<bool>.Deleted(true, _localizer["RoleRemovedSuccessfully"] ?? "Role removed successfully"); 
+                return Result<bool>.Deleted(true, _localizer["RoleRemovedSuccessfully"]);
         }
         catch (Exception ex)
         {

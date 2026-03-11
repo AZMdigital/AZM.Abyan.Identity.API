@@ -1,7 +1,6 @@
-using System;
-using System.Security.Cryptography;
 using AZM.Abyan.Identity.Application.Common.Interfaces;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
@@ -11,7 +10,7 @@ public class RsaKeyProvider(IConfiguration config) : IRsaKeyProvider
     private readonly object _lock = new();
 
     public string GetPrivateKeyPem() => Resolve("Licensing:PrivateKeyPem", "LICENSING_PRIVATE_KEY_PEM");
-    public string GetPublicKeyPem()  => Resolve("Licensing:PublicKeyPem",  "LICENSING_PUBLIC_KEY_PEM");
+    public string GetPublicKeyPem() => Resolve("Licensing:PublicKeyPem", "LICENSING_PUBLIC_KEY_PEM");
 
     public RSA GetRsa()
     {

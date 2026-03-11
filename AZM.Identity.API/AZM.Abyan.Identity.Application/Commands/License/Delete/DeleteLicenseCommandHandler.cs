@@ -21,12 +21,12 @@ public class DeleteLicenseCommandHandler(
 
             if (license == null)
             {
-                return Result<Guid>.NotFound(_localizer["LicenseNotFound"] ?? "License not found");
+                return Result<Guid>.NotFound(_localizer["LicenseNotFound"]);
             }
 
             await _repository.DeleteAsync(license.Id, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
-            return Result<Guid>.Deleted(license.Id, _localizer["LicenseDeletedSuccessfully"] ?? "License deleted successfully");
+            return Result<Guid>.Deleted(license.Id, _localizer["LicenseDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {

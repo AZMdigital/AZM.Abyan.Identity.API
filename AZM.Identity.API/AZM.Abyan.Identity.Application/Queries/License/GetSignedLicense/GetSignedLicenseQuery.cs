@@ -4,12 +4,7 @@ using MediatR;
 
 namespace AZM.Abyan.Identity.Application.Queries.License.GetSignedLicense;
 
-public class GetSignedLicenseQuery : IRequest<Result<LicenseFileDto>>
+public class GetSignedLicenseQuery(Guid licenseId) : IRequest<Result<LicenseFileDto>>
 {
-    public Guid LicenseId { get; set; }
-
-    public GetSignedLicenseQuery(Guid licenseId)
-    {
-        LicenseId = licenseId;
-    }
+    public Guid LicenseId { get; set; } = licenseId;
 }

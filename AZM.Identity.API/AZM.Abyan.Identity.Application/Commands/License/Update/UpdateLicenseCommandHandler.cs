@@ -27,7 +27,7 @@ public class UpdateLicenseCommandHandler(
 
             if (license == null)
             {
-                return Result<Guid>.NotFound(_localizer["LicenseNotFound"] ?? "License not found");
+                return Result<Guid>.NotFound(_localizer["LicenseNotFound"]);
             }
 
             bool needsHashRecalculation = false;
@@ -56,7 +56,7 @@ public class UpdateLicenseCommandHandler(
                 var clientNames = license.LicenseClients?
                     .Select(lc => lc.Client?.Name ?? "")
                     .Where(name => !string.IsNullOrEmpty(name))
-                    .ToList() ?? new List<string>();
+                    .ToList() ?? [];
 
                 var dto = new LicenseFileDto
                 {
@@ -76,7 +76,7 @@ public class UpdateLicenseCommandHandler(
 
             _licenseRepository.Update(license);
             await _licenseRepository.SaveChangesAsync(cancellationToken);
-            return Result<Guid>.Updated(license.Id, _localizer["LicenseUpdatedSuccessfully"] ?? "License updated successfully");
+            return Result<Guid>.Updated(license.Id, _localizer["LicenseUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

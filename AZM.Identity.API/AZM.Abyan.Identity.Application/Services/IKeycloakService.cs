@@ -1,8 +1,6 @@
-using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
-using AZM.Abyan.Identity.Application.DTOs.Groups;
 using AZM.Abyan.Identity.Application.DTOs.Organizations;
 using AZM.Abyan.Identity.Application.DTOs.ProtocolMappers;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
@@ -12,12 +10,12 @@ using AZM.Abyan.Identity.Application.DTOs.Users;
 namespace AZM.Abyan.Identity.Application.Services;
 
 public interface IKeycloakService
-{  
+{
     // Auth
     Task<LoginResponse> LoginAsync(string username, string password, CancellationToken cancellationToken = default);
     Task<LoginResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
     // Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default);
-     Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default);
 
 
     // Users
@@ -78,7 +76,7 @@ public interface IKeycloakService
     Task RemoveMemberFromOrganizationAsync(string realm, string organizationId, string memberId, string adminToken, CancellationToken cancellationToken = default);
 
     // Organization roles (add role to organization, assign user to role)
-   // Task<List<OrganizationRoleResponse>> GetOrganizationRolesAsync(string realm, string organizationId, string adminToken, CancellationToken cancellationToken = default);
+    // Task<List<OrganizationRoleResponse>> GetOrganizationRolesAsync(string realm, string organizationId, string adminToken, CancellationToken cancellationToken = default);
     //Task CreateOrganizationRoleAsync(string realm, string organizationId, CreateOrganizationRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
     //Task DeleteOrganizationRoleAsync(string realm, string organizationId, string roleName, string adminToken, CancellationToken cancellationToken = default);
     //Task<List<OrganizationRoleResponse>> GetOrganizationMemberRolesAsync(string realm, string organizationId, string memberId, string adminToken, CancellationToken cancellationToken = default);
@@ -103,11 +101,11 @@ public interface IKeycloakService
     Task RemoveRealmRoleFromUserAsync(AssignRealmRoleRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task<UserRoleMappingsResponse?> GetUserRoleMappingsAsync(string userId, string adminToken, CancellationToken cancellationToken = default);
     Task<Dictionary<string, string[]>> GetClientRoleAttributesAsync(string clientId, string roleName, string adminToken, CancellationToken cancellationToken);
-    
+
     // Protocol Mappers
-    Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm,string clientId, string clientScopeName, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default);
+    Task<ProtocolMapperResponse> CreateProtocolMapperAsync(string realm, string clientId, string clientScopeName, CreateProtocolMapperRequest request, string adminToken, CancellationToken cancellationToken = default);
     Task DisableProtocolMapperAsync(string realm, string clientScopeId, string mapperId, string adminToken, CancellationToken cancellationToken = default);
-    
+
     // Admin token helper
     Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default);
 
@@ -135,12 +133,12 @@ public interface IKeycloakService
     Task<string> CreateRolePolicyAsync(string realm, string clientId, string policyName, IEnumerable<string> roleNames, string adminToken, CancellationToken cancellationToken = default);
     Task UpdatePolicyAsync(string realm, string clientId, string policyId, PolicyDto policy, string adminToken, CancellationToken cancellationToken = default);
     Task DeletePolicyAsync(string realm, string clientId, string policyId, string adminToken, CancellationToken cancellationToken = default);
-    
+
     // Permissions
     Task<PermissionDto?> GetPermissionAsync(string realm, string clientId, string permissionName, string adminToken, CancellationToken cancellationToken = default);
     Task<List<PermissionDto>> GetAllPermissionsAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default);
     Task<string> CreateScopePermissionAsync(string realm, string clientId, string permissionName, IEnumerable<string> resources, IEnumerable<string> scopes, IEnumerable<string> policies, string adminToken, CancellationToken cancellationToken = default);
-    Task<List<OrganizationDto>> GetUserOrganizationsAsync(string userId, string adminToken,CancellationToken cancellationToken);
+    Task<List<OrganizationDto>> GetUserOrganizationsAsync(string userId, string adminToken, CancellationToken cancellationToken);
 
     // User-specific filtered data
     Task<List<PermissionDto>> GetUserPermissionsAsync(string realm, string clientId, string userId, string adminToken, CancellationToken cancellationToken = default);

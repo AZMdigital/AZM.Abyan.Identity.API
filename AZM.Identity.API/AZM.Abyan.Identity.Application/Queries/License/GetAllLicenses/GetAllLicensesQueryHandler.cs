@@ -1,5 +1,4 @@
 using AZM.Abyan.Identity.Application.DTOs.Licenses;
-using AZM.Abyan.Identity.Application.DTOs.Licenses;
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -28,16 +27,16 @@ public class GetAllLicensesQueryHandler(
             var responses = licenses.Select(license =>
             {
                 var response = license.Adapt<LicenseResponse>();
-                
+
                 // Map client names from LicenseClients
                 response.ClientNames = license.LicenseClients?
                     .Select(lc => lc.Client?.Name ?? "")
                     .Where(name => !string.IsNullOrEmpty(name))
-                    .ToList() ?? new List<string>();
-                
+                    .ToList() ?? [];
+
                 return response;
             }).ToList();
-            
+
             return Result<List<LicenseResponse>>.Success(responses);
         }
         catch (Exception ex)

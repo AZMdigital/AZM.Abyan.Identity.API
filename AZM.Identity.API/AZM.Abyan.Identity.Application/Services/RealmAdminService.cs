@@ -3,14 +3,9 @@ using AZM.Abyan.Identity.Application.DTOs.Roles;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
-public class RealmAdminService : IRealmAdminService
+public class RealmAdminService(IKeycloakService keycloakService) : IRealmAdminService
 {
-    private readonly IKeycloakService _keycloakService;
-
-    public RealmAdminService(IKeycloakService keycloakService)
-    {
-        _keycloakService = keycloakService;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
 
     public async Task<List<RealmResponse>> GetAllRealmsAsync(CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,4 @@
-namespace AZM.Abyan.Identity.Application.Commands.License.RefreshToken;
+namespace AZM.Abyan.Identity.Application.DTOs.Auth;
 
 public record RefreshAccessTokenResponse(
     string AccessToken,

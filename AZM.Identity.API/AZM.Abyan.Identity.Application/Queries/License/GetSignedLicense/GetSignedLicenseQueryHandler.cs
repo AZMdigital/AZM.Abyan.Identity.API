@@ -26,12 +26,12 @@ public class GetSignedLicenseQueryHandler(
         {
             var license = await _licenseRepository.GetByIdAsync(request.LicenseId, cancellationToken);
             if (license == null)
-                return Result<LicenseFileDto>.NotFound(_localizer["LicenseNotFound"] ?? "License not found");
+                return Result<LicenseFileDto>.NotFound(_localizer["LicenseNotFound"]);
 
             var clientNames = license.LicenseClients?
                 .Select(lc => lc.Client?.Name ?? "")
                 .Where(name => !string.IsNullOrEmpty(name))
-                .ToList() ?? new List<string>();
+                .ToList() ?? [];
 
             var dto = new LicenseFileDto
             {

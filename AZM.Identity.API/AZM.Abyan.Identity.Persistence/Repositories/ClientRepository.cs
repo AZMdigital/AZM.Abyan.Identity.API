@@ -4,9 +4,9 @@ using AZM.Abyan.Identity.Persistence.DbContexts;
 using AZM.Abyan.Identity.Persistence.Repositories.GenericRepository;
 using Microsoft.EntityFrameworkCore;
 
-namespace AZM.Abyan.Identity.Persistence.Persistence.Repositories;
+namespace AZM.Abyan.Identity.Persistence.Repositories;
 
-public class ClientRepository(IdentityDbContext context, ICurrentUserService _currentUserService)
+public class ClientRepository(IdentityDbContext context)
     : Repository<Client, Guid, IdentityDbContext>(context), IClientRepository
 {
     public async Task<Guid> AddAsync(Client metadata, CancellationToken cancellationToken = default)

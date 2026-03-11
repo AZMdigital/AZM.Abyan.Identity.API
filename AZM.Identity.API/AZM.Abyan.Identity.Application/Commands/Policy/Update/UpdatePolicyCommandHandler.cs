@@ -24,7 +24,7 @@ public class UpdatePolicyCommandHandler(
             var policy = await _policyRepository.GetByIdAsync(request.PolicyId, cancellationToken);
             if (policy == null)
             {
-                return Result<bool>.NotFound(_localizer["PolicyNotFound"] ?? "Policy not found");
+                return Result<bool>.NotFound(_localizer["PolicyNotFound"]);
             }
 
             // Get admin token
@@ -56,7 +56,7 @@ public class UpdatePolicyCommandHandler(
             _policyRepository.Update(policy);
             await _policyRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Updated(true, _localizer["PolicyUpdatedSuccessfully"] ?? "Policy updated successfully");
+            return Result<bool>.Updated(true, _localizer["PolicyUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

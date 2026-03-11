@@ -15,7 +15,7 @@ public class Result<T>
     // Success variations
     public static Result<T> Success(T data, string message = "")
         => new() { IsSuccess = true, StatusCode = ResultStatus.Success, Data = data, Message = message };
-    public static Result<T> Failure(string message = "Operation failed")
+    public static Result<T> Failure(string message = "Operation failed", Services.SyncResult? result = null)
     => new() { IsSuccess = false, StatusCode =400, Message = message };
     public static Result<T> Created(T data, string message = "")
         => new() { IsSuccess = true, StatusCode = ResultStatus.Created, Data = data, Message = message };

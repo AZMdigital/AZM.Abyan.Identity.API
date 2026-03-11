@@ -1,10 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using AZM.Abyan.Identity.Application.Common.Interfaces;
+using AZM.Abyan.Identity.Domain.Entities;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
-using AZM.Abyan.Identity.Application.Common.Interfaces;
-using AZM.Abyan.Identity.Domain.Entities;
-using Microsoft.IdentityModel.Tokens;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 

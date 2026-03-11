@@ -26,7 +26,7 @@ public class GetLicenseByIdQueryHandler(
                          .AsNoTracking().FirstOrDefaultAsync(cancellationToken);
             if (license == null)
             {
-                return Result<LicenseResponse>.NotFound(_localizer["LicenseNotFound"] ?? "License not found");
+                return Result<LicenseResponse>.NotFound(_localizer["LicenseNotFound"]);
             }
 
             var response = license.Adapt<LicenseResponse>();
@@ -35,7 +35,7 @@ public class GetLicenseByIdQueryHandler(
             response.ClientNames = license.LicenseClients?
                 .Select(lc => lc.Client?.Name ?? "")
                 .Where(name => !string.IsNullOrEmpty(name))
-                .ToList() ?? new List<string>();
+                .ToList() ?? [];
             
             return Result<LicenseResponse>.Success(response);
         }

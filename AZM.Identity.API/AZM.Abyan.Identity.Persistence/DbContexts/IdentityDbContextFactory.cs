@@ -1,26 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using System.IO;
 
-namespace AZM.Abyan.Identity.Persistence.DbContexts
+namespace AZM.Abyan.Identity.Persistence.DbContexts;
+
+public class IdentityDbContextFactory : IDesignTimeDbContextFactory<IdentityDbContext>
 {
-    public class IdentityDbContextFactory : IDesignTimeDbContextFactory<IdentityDbContext>
+    public IdentityDbContext CreateDbContext(string[] args)
     {
-        public IdentityDbContext CreateDbContext(string[] args)
-        {
-           
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
 
-            var optionsBuilder = new DbContextOptionsBuilder<IdentityDbContext>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-            optionsBuilder.UseNpgsql(connectionString);
+        var optionsBuilder = new DbContextOptionsBuilder<IdentityDbContext>();
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            return new IdentityDbContext(optionsBuilder.Options);
-        }
+        optionsBuilder.UseNpgsql(connectionString);
+
+        return new IdentityDbContext(optionsBuilder.Options);
     }
 }

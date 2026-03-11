@@ -1,183 +1,108 @@
+using AZM.Abyan.Identity.API.Controllers.Base;
 using AZM.Abyan.Identity.Application.Commands.User.Create;
 using AZM.Abyan.Identity.Application.Commands.User.Delete;
+using AZM.Abyan.Identity.Application.Commands.User.ForgotPassword;
+using AZM.Abyan.Identity.Application.Commands.User.ResetPassword;
+using AZM.Abyan.Identity.Application.Commands.User.SendVerifyEmail;
 using AZM.Abyan.Identity.Application.Commands.User.Update;
 using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Users;
-using AZM.Abyan.Identity.Application.Resources;
-using AZM.Abyan.Identity.Application.Services;
-using MediatR;
+using AZM.Abyan.Identity.Application.Queries.User.GetUserById;
+using AZM.Abyan.Identity.Application.Queries.User.GetUsers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : ControllerBase
+public class UsersController : BaseController
 {
-    private readonly IUserService _userService;
-    private readonly IMediator _mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public UsersController(IUserService userService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
-    {
-        _userService = userService;
-        _mediator = mediator;
-        _localizer = localizer;
-    }
-
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
-        try
+        // Command handler will create user in Keycloak and save to database
+        CreateUserCommand command = new CreateUserCommand
         {
-            // Command handler will create user in Keycloak and save to database
-            CreateUserCommand command = new CreateUserCommand();
-            command.Username = request.Username;
-            command.Email = request.Email;
-            command.FirstName = request.FirstName;
-            command.LastName = request.LastName;
-            command.Password = request.Password;
-            command.Enabled = request.Enabled;
-            command.EmailVerified = request.EmailVerified;
-            command.OrganizationName = request.OrganizationName; // Set RealmName from request
-            
-            var result = await _mediator.Send(command);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+            Username = request.Username,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Password = request.Password,
+            Enabled = request.Enabled,
+            EmailVerified = request.EmailVerified,
+            OrganizationName = request.OrganizationName
+        };
+
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            request.UserId = id;
-            var result = await _mediator.Send(new UpdateUserCommand(request));
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        request.UserId = id;
+        var result = await Mediator.Send(new UpdateUserCommand(request), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteUser(string id, CancellationToken cancellationToken)
     {
-        try
-        {
-            if (!Guid.TryParse(id, out var userId))
-            {
-                return BadRequest(new { message = _localizer["InvalidUserId"] });
-            }
-            var result = await _mediator.Send(new DeleteUserCommand(userId));
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+      
+        var result = await Mediator.Send(new DeleteUserCommand(id), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<UserResponse>>> GetUsers(CancellationToken cancellationToken)
     {
-        try
-        {
-            var users = await _userService.GetUsersAsync(cancellationToken);
-            return Ok(users);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetUsersQuery(), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> GetUserById(string id, CancellationToken cancellationToken)
     {
-        try
-        {
-            var user = await _userService.GetUserByIdAsync(id, cancellationToken);
-            if (user == null)
-                return NotFound(new { message = _localizer["UserNotFound"] });
-
-            return Ok(user);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetUserByIdQuery(id), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
-
-    //[HttpPut("{id}/enable")]
-    //public async Task<ActionResult> EnableUser(string id, [FromBody] bool enabled, CancellationToken cancellationToken)
-    //{
-    //    try
-    //    {
-    //        await _userService.EnableUserAsync(id, enabled, cancellationToken);
-    //        return Ok(new { message = $"User {(enabled ? "enabled" : "disabled")} successfully" });
-    //    }
-    //    catch (KeyNotFoundException ex)
-    //    {
-    //        return NotFound(new { message = ex.Message });
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return BadRequest(new { message = ex.Message });
-    //    }
-    //}
 
     [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var sent = await _userService.ForgotPasswordAsync(request, cancellationToken);
-
-            if (!sent)
-            {
-                return NotFound(new { message = _localizer["UserNotFound"] });
-            }
-
-            return Ok(new { message = _localizer["OperationSuccess"] ?? "Reset password email sent" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new ForgotPasswordCommand(request), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
+
     [HttpPut("{id}/reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> ResetUserPassword(string id, [FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            await _userService.ResetUserPasswordAsync(id, request, cancellationToken);
-            return Ok(new { message = $"Password for user {id} reset successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await Mediator.Send(new ResetUserPasswordCommand(id, request), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("{id}/send-verify-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> SendVerifyEmail(string id, CancellationToken cancellationToken)
     {
-        try
-        {
-            await _userService.SendVerifyEmailAsync(id, cancellationToken);
-            return Ok(new { message = $"Verification email sent to user {id} successfully" });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await Mediator.Send(new SendVerifyEmailCommand(id), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 }
 

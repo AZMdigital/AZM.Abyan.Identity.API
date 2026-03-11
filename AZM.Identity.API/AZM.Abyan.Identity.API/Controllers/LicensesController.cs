@@ -4,6 +4,7 @@ using AZM.Abyan.Identity.Application.Commands.License.Delete;
 using AZM.Abyan.Identity.Application.Commands.License.RefreshToken;
 using AZM.Abyan.Identity.Application.Commands.License.Update;
 using AZM.Abyan.Identity.Application.DTOs;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.Licenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetAllLicenses;
 using AZM.Abyan.Identity.Application.Queries.License.GetLicenseById;

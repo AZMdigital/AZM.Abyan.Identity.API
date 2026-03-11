@@ -1,133 +1,95 @@
+using AZM.Abyan.Identity.API.Controllers.Base;
 using AZM.Abyan.Identity.Application.Commands.Scope.Create;
 using AZM.Abyan.Identity.Application.Commands.Scope.Delete;
 using AZM.Abyan.Identity.Application.Commands.Scope.Update;
 using AZM.Abyan.Identity.Application.DTOs.Scopes;
-using AZM.Abyan.Identity.Application.Resources;
-using AZM.Abyan.Identity.Application.Services;
-using MediatR;
+using AZM.Abyan.Identity.Application.Queries.Scope.GetScopeByName;
+using AZM.Abyan.Identity.Application.Queries.Scope.GetScopes;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class ScopesController(IMediator mediator, IKeycloakService keycloakService, IStringLocalizer<SharedResource> localizer) : ControllerBase
+public class ScopesController : BaseController
 {
-    private readonly IMediator _mediator = mediator;
-    private readonly IKeycloakService _keycloakService = keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
-
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> GetScopes(string realm, string clientId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            var scopes = await _keycloakService.GetAllScopesAsync(realm, clientId, adminToken, cancellationToken);
-            return Ok(scopes);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetScopesQuery(realm, clientId), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{scopeName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetScopeByName(string realm, string clientId, string scopeName, CancellationToken cancellationToken)
     {
-        try
-        {
-            var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
-            var scope = await _keycloakService.GetScopeAsync(realm, clientId, scopeName, adminToken, cancellationToken);
-            
-            if (scope == null)
-                return NotFound(new { message = _localizer["ScopeNotFound"] });
-
-            return Ok(scope);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetScopeByNameQuery(realm, clientId, scopeName), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateScope(string realm, string clientId, [FromBody] CreateScopeRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new CreateScopeCommand
         {
-            var command = new CreateScopeCommand
-            {
-                CreateScopeRequest = request,
-                RealmName = realm,
-                KeycloakClientId = clientId
-            };
+            CreateScopeRequest = request,
+            RealmName = realm,
+            KeycloakClientId = clientId
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("{scopeId}")]
-    public async Task<ActionResult> UpdateScope(string realm, string clientId, string scopeId, [FromBody] UpdateScopeRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdateScope(string realm, string clientId, Guid scopeId, [FromBody] UpdateScopeRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new UpdateScopeCommand
         {
-            if (!Guid.TryParse(scopeId, out var scopeIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidScopeId"] });
-            }
+            ScopeId = scopeId,
+            UpdateScopeRequest = request,
+            RealmName = realm,
+            KeycloakClientId = clientId,
+            KeycloakScopeId = scopeId.ToString()
+        };
 
-            // Get Keycloak scope ID - you may need to store this mapping or fetch it
-            // For now, assuming scopeId parameter is the Keycloak scope ID (string)
-            var command = new UpdateScopeCommand
-            {
-                ScopeId = scopeIdGuid,
-                UpdateScopeRequest = request,
-                RealmName = realm,
-                KeycloakClientId = clientId,
-                KeycloakScopeId = scopeId // Assuming scopeId is Keycloak scope ID
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
 
     [HttpDelete("{scopeId}")]
-    public async Task<ActionResult> DeleteScope(string realm, string clientId, string scopeId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteScope(string realm, string clientId, Guid scopeId, CancellationToken cancellationToken)
     {
-        try
+        var command = new DeleteScopeCommand
         {
-            if (!Guid.TryParse(scopeId, out var scopeIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidScopeId"] });
-            }
+            ScopeId = scopeId,
+            RealmName = realm,
+            KeycloakClientId = clientId,
+            KeycloakScopeId = scopeId.ToString()
+        };
 
-            // Get Keycloak scope ID - you may need to store this mapping or fetch it
-            var command = new DeleteScopeCommand
-            {
-                ScopeId = scopeIdGuid,
-                RealmName = realm,
-                KeycloakClientId = clientId,
-                KeycloakScopeId = scopeId // Assuming scopeId is Keycloak scope ID
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
 }

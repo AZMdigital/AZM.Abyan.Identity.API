@@ -3,7 +3,7 @@ using MediatR;
 
 namespace AZM.Abyan.Identity.Application.Commands.User.Delete;
 
-public class DeleteUserCommand(Guid userId) : IRequest<Result<bool>>
+public class DeleteUserCommand(string userId) : IRequest<Result<bool>>
 {
-    public Guid UserId { get; set; } = userId;
+    public string UserId { get; set; } = userId;
 }

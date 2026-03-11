@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -7,21 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class RoleSyncService : IRoleSyncService
+public class RoleSyncService(
+    IKeycloakService keycloakService,
+    IRepository<Role, Guid> roleRepository,
+    IdentityDbContext dbContext) : IRoleSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<Role, Guid> _roleRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public RoleSyncService(
-        IKeycloakService keycloakService,
-        IRepository<Role, Guid> roleRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _roleRepository = roleRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<Role, Guid> _roleRepository = roleRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncRolesAsync(string realm, string keycloakClientId, Guid localClientId, string adminToken, CancellationToken cancellationToken = default)
     {

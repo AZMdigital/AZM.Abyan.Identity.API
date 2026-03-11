@@ -2,14 +2,9 @@ using AZM.Abyan.Identity.Application.DTOs.Auth;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
-public class AuthService : IAuthService
+public class AuthService(IKeycloakService keycloakService) : IAuthService
 {
-    private readonly IKeycloakService _keycloakService;
-
-    public AuthService(IKeycloakService keycloakService)
-    {
-        _keycloakService = keycloakService;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {

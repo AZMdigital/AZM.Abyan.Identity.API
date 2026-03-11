@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -7,21 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class UserSyncService : IUserSyncService
+public class UserSyncService(
+    IKeycloakService keycloakService,
+    IRepository<User, Guid> userRepository,
+    IdentityDbContext dbContext) : IUserSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<User, Guid> _userRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public UserSyncService(
-        IKeycloakService keycloakService,
-        IRepository<User, Guid> userRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _userRepository = userRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<User, Guid> _userRepository = userRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncUsersAsync(string realm, Guid tenantId, string adminToken, CancellationToken cancellationToken = default)
     {

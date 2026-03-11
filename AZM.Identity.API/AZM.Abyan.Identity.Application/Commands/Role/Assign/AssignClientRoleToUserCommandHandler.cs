@@ -35,26 +35,26 @@ public class AssignClientRoleToUserCommandHandler(
             var tenantId = await _realmResolverService.ResolveRealmIdAsync(request.Realm, cancellationToken);
             if (!tenantId.HasValue)
             {
-                return Result<bool>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.Realm}' not found");
+                return Result<bool>.Failure(_localizer["TenantNotFound"]);
             }
 
             // Parse UserId
             if (!Guid.TryParse(request.AssignRoleRequest.UserId, out var userId))
             {
-                return Result<bool>.Failure(_localizer["InvalidUserId"] ?? "Invalid user ID format");
+                return Result<bool>.Failure(_localizer["InvalidUserId"]);
             }
 
             // Verify user exists
             var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
-                return Result<bool>.NotFound(_localizer["UserNotFound"] ?? "User not found");
+                return Result<bool>.NotFound(_localizer["UserNotFound"]);
             }
 
             // Parse ClientId to Guid
             if (!Guid.TryParse(request.AssignRoleRequest.ClientId, out var clientIdGuid))
             {
-                return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
+                return Result<bool>.Failure(_localizer["InvalidClientId"]);
             }
 
             // Get role by name and clientId from database    
@@ -64,7 +64,7 @@ public class AssignClientRoleToUserCommandHandler(
 
             if (role == null)
             {
-                return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? $"Role '{request.AssignRoleRequest.RoleName}' not found for client '{request.AssignRoleRequest.ClientId}'");
+                return Result<bool>.NotFound(_localizer["RoleNotFound"]);
             }
             // Check if assignment already exists
             var existingAssignment = await _tenantUserRoleRepository
@@ -73,7 +73,7 @@ public class AssignClientRoleToUserCommandHandler(
 
             if (existingAssignment != null)
             {
-                return Result<bool>.Conflict(_localizer["RoleAlreadyAssigned"] ?? "Role is already assigned to this user");
+                return Result<bool>.Conflict(_localizer["RoleAlreadyAssigned"]);
             }
             // Assign role in Keycloak first
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
@@ -97,7 +97,7 @@ public class AssignClientRoleToUserCommandHandler(
 
             await _tenantUserRoleRepository.CreateAsync(tenantUserRole, cancellationToken);
             await _tenantUserRoleRepository.SaveChangesAsync(cancellationToken);
-            return Result<bool>.Success(true, _localizer["RoleAssignedSuccessfully"] ?? "Role assigned successfully");
+            return Result<bool>.Success(true, _localizer["RoleAssignedSuccessfully"]);
         }
         catch (Exception ex)
         {

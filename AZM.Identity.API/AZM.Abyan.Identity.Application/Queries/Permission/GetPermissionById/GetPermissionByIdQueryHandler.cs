@@ -25,7 +25,7 @@ public class GetPermissionByIdQueryHandler(
 
         if (permission == null)
         {
-            return Result<PermissionResponse>.NotFound(_localizer["PermissionNotFound"] ?? "Permission not found");
+            return Result<PermissionResponse>.NotFound(_localizer["PermissionNotFound"]);
         }
 
         var response = new PermissionResponse

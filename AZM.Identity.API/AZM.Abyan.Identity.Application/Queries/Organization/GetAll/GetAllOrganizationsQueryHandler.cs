@@ -7,18 +7,12 @@ using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Queries.Organization.GetAll;
 
-public class GetAllOrganizationsQueryHandler : IRequestHandler<GetAllOrganizationsQuery, Result<List<OrganizationResponse>>>
+public class GetAllOrganizationsQueryHandler(
+    IKeycloakService keycloakService,
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<GetAllOrganizationsQuery, Result<List<OrganizationResponse>>>
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public GetAllOrganizationsQueryHandler(
-        IKeycloakService keycloakService,
-        IStringLocalizer<SharedResource> localizer)
-    {
-        _keycloakService = keycloakService;
-        _localizer = localizer;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     public async Task<Result<List<OrganizationResponse>>> Handle(GetAllOrganizationsQuery request, CancellationToken cancellationToken)
     {

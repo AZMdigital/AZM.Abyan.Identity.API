@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.Services;
 using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
@@ -7,21 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class ScopeSyncService : IScopeSyncService
+public class ScopeSyncService(
+    IKeycloakService keycloakService,
+    IRepository<Scope, Guid> scopeRepository,
+    IdentityDbContext dbContext) : IScopeSyncService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRepository<Scope, Guid> _scopeRepository;
-    private readonly IdentityDbContext _dbContext;
-
-    public ScopeSyncService(
-        IKeycloakService keycloakService,
-        IRepository<Scope, Guid> scopeRepository,
-        IdentityDbContext dbContext)
-    {
-        _keycloakService = keycloakService;
-        _scopeRepository = scopeRepository;
-        _dbContext = dbContext;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRepository<Scope, Guid> _scopeRepository = scopeRepository;
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<SyncEntityResult> SyncScopesAsync(string realm, string clientId, string adminToken, CancellationToken cancellationToken = default)
     {

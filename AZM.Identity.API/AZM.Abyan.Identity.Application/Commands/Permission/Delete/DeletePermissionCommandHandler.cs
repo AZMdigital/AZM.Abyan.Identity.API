@@ -18,7 +18,7 @@ public class DeletePermissionCommandHandler(
         var permission = await _permissionRepository.GetByIdAsync(request.PermissionId, cancellationToken);
         if (permission == null)
         {
-            return Result<bool>.NotFound(_localizer["PermissionNotFound"] ?? "Permission not found");
+            return Result<bool>.NotFound(_localizer["PermissionNotFound"]);
         }
 
         // Soft delete
@@ -26,7 +26,7 @@ public class DeletePermissionCommandHandler(
         _permissionRepository.Update(permission);
         await _permissionRepository.SaveChangesAsync(cancellationToken);
 
-        return Result<bool>.Deleted(true, _localizer["PermissionDeletedSuccessfully"] ?? "Permission deleted successfully");
+        return Result<bool>.Deleted(true, _localizer["PermissionDeletedSuccessfully"]);
     }
 }
 

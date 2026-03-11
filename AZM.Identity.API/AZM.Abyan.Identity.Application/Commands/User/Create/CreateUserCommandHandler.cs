@@ -2,10 +2,8 @@ using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Commands.User.Create;
@@ -25,19 +23,23 @@ public class CreateUserCommandHandler(
     {
         try
         {
+            // Check if OrganizationName is null or empty
+            if (string.IsNullOrEmpty(request.OrganizationName))
+            {
+                return Result<Guid>.Failure(_localizer["OrganizationNameRequired"]);
+            }
+
             // Resolve RealmId from RealmName if provided
             Guid? realmId = null;
             Guid? tenantId = null;
-            if (!string.IsNullOrWhiteSpace(request.OrganizationName))
+            // Resolve RealmId from RealmName
+            var resolvedRealmId = await _realmResolverService.ResolveRealmIdAsync(request.OrganizationName, cancellationToken);
+            if (!resolvedRealmId.HasValue)
             {
-                var resolvedRealmId = await _realmResolverService.ResolveRealmIdAsync(request.OrganizationName, cancellationToken);
-                if (!resolvedRealmId.HasValue)
-                {
-                    return Result<Guid>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.OrganizationName}' not found");
-                }
-                realmId = resolvedRealmId.Value;
-                tenantId = resolvedRealmId.Value; // Keep TenantId for backward compatibility
+                return Result<Guid>.Failure(_localizer["TenantNotFound"]);
             }
+             realmId = resolvedRealmId.Value;
+             tenantId = resolvedRealmId.Value; // Keep TenantId for backward compatibility
 
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
@@ -53,15 +55,15 @@ public class CreateUserCommandHandler(
                 LastName = request.LastName,
                 Password = request.Password,
                 Enabled = true,
-                EmailVerified =true,
-                OrganizationName=request.OrganizationName
+                EmailVerified = true,
+                OrganizationName = request.OrganizationName
             };
 
             var keycloakUserIdString = await _keycloakService.CreateUserAsync(createUserRequest, adminToken, cancellationToken);
 
             if (string.IsNullOrEmpty(keycloakUserIdString) || !Guid.TryParse(keycloakUserIdString, out var keycloakUserId))
             {
-                return Result<Guid>.Failure(_localizer["FailedToCreateUserInKeycloak"] ?? "Failed to create user in Keycloak");
+                return Result<Guid>.Failure(_localizer["FailedToCreateUserInKeycloak"]);
             }
 
             // Create local entity with ID from Keycloak
@@ -73,7 +75,7 @@ public class CreateUserCommandHandler(
                 Firstname = request.FirstName,
                 Lastname = request.LastName,
                 TenantId = tenantId, // Keep for backward compatibility
-               // RealmId = realmId, // Add RealmId similar to Client
+                                     // RealmId = realmId, // Add RealmId similar to Client
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Guid.Empty
             };
@@ -81,7 +83,7 @@ public class CreateUserCommandHandler(
             await _userRepository.CreateAsync(user, cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(user.Id, _localizer["UserCreatedSuccessfully"] ?? "User created successfully");
+            return Result<Guid>.Created(user.Id, _localizer["UserCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

@@ -35,19 +35,19 @@ public class CreatePermissionCommandHandler(
             var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
             if (scope == null)
             {
-                return Result<Guid>.Failure(_localizer["ScopeNotFound"] ?? $"Scope with ID {request.ScopeId} not found");
+                return Result<Guid>.Failure(_localizer["ScopeNotFound"]);
             }
 
             var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
             if (resource == null)
             {
-                return Result<Guid>.Failure(_localizer["ResourceNotFound"] ?? $"Resource with ID {request.ResourceId} not found");
+                return Result<Guid>.Failure(_localizer["ResourceNotFound"]);
             }
 
             var policy = await _policyRepository.GetByIdAsync(request.PolicyId, cancellationToken);
             if (policy == null)
             {
-                return Result<Guid>.Failure(_localizer["PolicyNotFound"] ?? $"Policy with ID {request.PolicyId} not found");
+                return Result<Guid>.Failure(_localizer["PolicyNotFound"]);
             }
 
             // Create permission in Keycloak first
@@ -64,7 +64,7 @@ public class CreatePermissionCommandHandler(
 
             if (string.IsNullOrEmpty(keycloakPermissionId) || !Guid.TryParse(keycloakPermissionId, out var keycloakPermissionIdGuid))
             {
-                return Result<Guid>.Failure(_localizer["FailedToCreatePermissionInKeycloak"] ?? "Failed to create permission in Keycloak or retrieve its ID");
+                return Result<Guid>.Failure(_localizer["FailedToCreatePermissionInKeycloak"]);
             }
 
             // Create local entity with ID from Keycloak
@@ -83,7 +83,7 @@ public class CreatePermissionCommandHandler(
             await _permissionRepository.CreateAsync(permission, cancellationToken);
             await _permissionRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(permission.Id, _localizer["PermissionCreatedSuccessfully"] ?? "Permission created successfully");
+            return Result<Guid>.Created(permission.Id, _localizer["PermissionCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

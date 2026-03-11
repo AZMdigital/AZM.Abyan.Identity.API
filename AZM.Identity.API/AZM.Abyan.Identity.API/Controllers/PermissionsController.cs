@@ -1,202 +1,135 @@
+using AZM.Abyan.Identity.API.Controllers.Base;
 using AZM.Abyan.Identity.Application.Commands.Permission.Assign;
 using AZM.Abyan.Identity.Application.Commands.Permission.Create;
 using AZM.Abyan.Identity.Application.Commands.Permission.Delete;
 using AZM.Abyan.Identity.Application.Commands.Permission.Unassign;
 using AZM.Abyan.Identity.Application.Commands.Permission.Update;
-using AZM.Abyan.Identity.Application.Commands.Role.Assign;
-using AZM.Abyan.Identity.Application.Commands.Role.Unassign;
 using AZM.Abyan.Identity.Application.DTOs.Permissions;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissionById;
 using AZM.Abyan.Identity.Application.Queries.Permission.GetPermissions;
-using AZM.Abyan.Identity.Application.Resources;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/clients/{clientId}/[controller]")]
-public class PermissionsController : ControllerBase
+public class PermissionsController : BaseController
 {
-    private readonly IMediator _mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public PermissionsController(IMediator mediator, IStringLocalizer<SharedResource> localizer)
-    {
-        _mediator = mediator;
-        _localizer = localizer;
-    }
-
     [HttpGet]
-    public async Task<ActionResult<List<PermissionResponse>>> GetPermissions(string realm, Guid clientId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> GetPermissions(string realm, Guid clientId, CancellationToken cancellationToken)
     {
-        try
-        {
-            //if (!Guid.TryParse(clientId, out var clientIdGuid))
-            //{
-            //    return BadRequest(new { message = _localizer["InvalidClientId"] });
-            //}
-
-            var query = new GetPermissionsQuery
-            {
-                ClientId = clientId
-            };
-
-            var result = await _mediator.Send(query, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var query = new GetPermissionsQuery { ClientId = clientId };
+        var result = await Mediator.Send(query, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{permissionId}")]
-    public async Task<ActionResult<PermissionResponse>> GetPermissionById(string realm, Guid clientId, string permissionId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> GetPermissionById(string realm, Guid clientId, Guid permissionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            if (!Guid.TryParse(permissionId, out var permissionIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
-            }
-
-            var query = new GetPermissionByIdQuery
-            {
-                PermissionId = permissionIdGuid
-            };
-
-            var result = await _mediator.Send(query, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var query = new GetPermissionByIdQuery { PermissionId = permissionId };
+        var result = await Mediator.Send(query, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
-    public async Task<ActionResult> CreatePermission(string realm, string clientId, [FromBody] CreatePermissionRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> CreatePermission(string realm, Guid clientId, [FromBody] CreatePermissionRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new CreatePermissionCommand
         {
-            if (!Guid.TryParse(clientId, out var clientIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidClientId"] });
-            }
+            Name = request.Name,
+            Description = request.Description,
+            ScopeId = request.ScopeId,
+            ResourceId = request.ResourceId,
+            PolicyId = request.PolicyId,
+            ClientId = clientId, 
+            RealmName = realm,
+            KeycloakClientId = clientId.ToString()
+        };
 
-            // Command handler will create permission in Keycloak and save to database
-            CreatePermissionCommand command = new CreatePermissionCommand
-            {
-                Name = request.Name,
-                Description = request.Description,
-                ScopeId = request.ScopeId,
-                ResourceId = request.ResourceId,
-                PolicyId = request.PolicyId,
-                ClientId = clientIdGuid, // Local client ID (Guid, same as Keycloak ID now)
-                RealmName = realm,
-                KeycloakClientId = clientId // Keycloak client ID (string)
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("{permissionId}")]
-    public async Task<ActionResult> UpdatePermission(string realm, string clientId, string permissionId, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UpdatePermission(string realm, Guid clientId, Guid permissionId, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new UpdatePermissionCommand
         {
-            if (!Guid.TryParse(permissionId, out var permissionIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
-            }
+            PermissionId = permissionId,
+            UpdatePermissionRequest = request
+        };
 
-            var command = new UpdatePermissionCommand
-            {
-                PermissionId = permissionIdGuid,
-                UpdatePermissionRequest = request
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
 
     [HttpDelete("{permissionId}")]
-    public async Task<ActionResult> DeletePermission(string realm, Guid clientId, string permissionId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeletePermission(string realm, Guid clientId, Guid permissionId, CancellationToken cancellationToken)
     {
-        try
-        {
-            if (!Guid.TryParse(permissionId, out var permissionIdGuid))
-            {
-                return BadRequest(new { message = _localizer["InvalidPermissionId"] });
-            }
-
-            var command = new DeletePermissionCommand
-            {
-                PermissionId = permissionIdGuid
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
+        var command = new DeletePermissionCommand { PermissionId = permissionId };
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
+
     [HttpPost("assign")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> AssignClientPermissionsToUser(string realm, Guid clientId, [FromBody] AssignPermissionRequest request, CancellationToken cancellationToken)
     {
-        try
+        request.ClientId = clientId.ToString();
+        var command = new AssignClientPermissionToUserCommand
         {
-            request.ClientId = clientId.ToString();
-            var command = new AssignClientPermissionToUserCommand
-            {
-                AssignPermissionRequest = request,
-                Realm = realm,
-            };
+            AssignPermissionRequest = request,
+            Realm = realm,
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
 
     [HttpPost("unassign")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> UnassignClientPermissionsFromUser(string realm, Guid clientId, [FromBody] AssignPermissionRequest request, CancellationToken cancellationToken)
     {
-        try
+        request.ClientId = clientId.ToString();
+        var command = new RemoveClientPermissionFromUserCommand
         {
-            request.ClientId = clientId.ToString();
-            var command = new RemoveClientPermissionFromUserCommand
-            {
-                AssignPermissionRequest = request,
-                Realm = realm
-            };
+            AssignPermissionRequest = request,
+            Realm = realm
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
+        
+        if (!result.IsSuccess)
             return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+
+        return NoContent();
     }
 }
-

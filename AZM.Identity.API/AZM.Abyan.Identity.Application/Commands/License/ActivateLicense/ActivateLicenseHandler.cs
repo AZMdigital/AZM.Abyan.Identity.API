@@ -15,7 +15,6 @@ public class ActivateLicenseHandler(
     ITenantRepository tenantRepo,
     IClientRepository clientRepo,
     ILicenseService licenseService,
-    IJwtIssuerService jwtIssuer,
     IRsaKeyProvider rsaKeyProvider,
     IKeycloakVerifier keycloakVerifier,
     ILogger<ActivateLicenseHandler> logger,

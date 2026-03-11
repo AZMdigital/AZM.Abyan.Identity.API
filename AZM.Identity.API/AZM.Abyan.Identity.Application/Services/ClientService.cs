@@ -1,19 +1,11 @@
-using System.Text.Json;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
-using MediatR;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
-public class ClientService : IClientService
+public class ClientService(IKeycloakService keycloakService) : IClientService
 {
-    private readonly IKeycloakService _keycloakService;
-
-    public ClientService(IKeycloakService keycloakService)
-    {
-        _keycloakService = keycloakService;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
 
     public async Task<List<ClientResponse>> GetClientsAsync(string realm, CancellationToken cancellationToken = default)
     {

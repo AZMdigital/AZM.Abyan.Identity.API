@@ -34,11 +34,11 @@ public class CreateLicenseCommandHandler(
             // Validate tenant exists
             var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, cancellationToken);
             if (tenant == null)
-                return Result<LicenseFileDto>.NotFound(_localizer["TenantNotFound"] ?? "Tenant not found");
+                return Result<LicenseFileDto>.NotFound(_localizer["TenantNotFound"]);
 
             // Validate client names provided
             if (!request.ClientNames.Any())
-                return Result<LicenseFileDto>.Failure(_localizer["AtLeastOneClientRequired"] ?? "At least one client is required");
+                return Result<LicenseFileDto>.Failure(_localizer["AtLeastOneClientRequired"]);
 
             // Resolve client names to client entities from database
             var clients = new List<Domain.Entities.Client>();
@@ -53,7 +53,7 @@ public class CreateLicenseCommandHandler(
                     c.RealmId == request.TenantId);
                 
                 if (client == null)
-                    return Result<LicenseFileDto>.NotFound($"{_localizer["ClientNotFound"] ?? "Client"} '{clientName}'");
+                    return Result<LicenseFileDto>.NotFound($"{_localizer["ClientNotFound"]} '{clientName}'");
                 
                 clients.Add(client);
                 clientIds.Add(client.Id);
@@ -67,7 +67,7 @@ public class CreateLicenseCommandHandler(
             {
                 LicenseId = licenseId.ToString(),
                 TenantId = tenant.Id.ToString(),
-                ClientNames = clients.Select(c => c.Name ?? "").ToList(),
+                ClientNames = [.. clients.Select(c => c.Name ?? "")],
                 Package = request.PackageName,
                 ExpiryDate = request.ExpiryDate
             };
@@ -114,7 +114,7 @@ public class CreateLicenseCommandHandler(
             await _licenseClientRepository.SaveChangesAsync(cancellationToken);
 
             return Result<LicenseFileDto>.Created(dto, 
-                _localizer["LicenseCreatedSuccessfully"] ?? "License created successfully");
+                _localizer["LicenseCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

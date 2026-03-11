@@ -20,10 +20,10 @@ public class DeleteUserCommandHandler(
     {
         try
         {
-            var user = await _repository.GetByIdAsync(request.UserId, cancellationToken);
+            var user = await _repository.GetByIdAsync(Guid.Parse(request.UserId), cancellationToken);
             if (user == null)
             {
-                return Result<bool>.NotFound(_localizer["UserNotFound"] ?? "User not found");
+                return Result<bool>.NotFound(_localizer["UserNotFound"]);
             }
 
             // Delete user in Keycloak first
@@ -35,7 +35,7 @@ public class DeleteUserCommandHandler(
             _repository.Update(user);
             await _repository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Deleted(true, _localizer["UserDeletedSuccessfully"] ?? "User deleted successfully");
+            return Result<bool>.Deleted(true, _localizer["UserDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {

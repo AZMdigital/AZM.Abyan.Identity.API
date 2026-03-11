@@ -1,14 +1,11 @@
-using AZM.Abyan.Identity.Application.Commands.Scope.Create;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace AZM.Abyan.Identity.Application.Commands.Resource.Create;
 
@@ -55,7 +52,7 @@ public class CreateResourceCommandHandler(
 
             if (keycloakResourceId == Guid.Empty)
             {
-                return Result<Guid>.Failure(_localizer["FailedToCreateResourceInKeycloak"] ?? "Failed to create resource in Keycloak");
+                return Result<Guid>.Failure(_localizer["FailedToCreateResourceInKeycloak"]);
             }
 
             // Get or create scope in database (assuming first scope for now)
@@ -66,7 +63,7 @@ public class CreateResourceCommandHandler(
                 var existingScope = await _scopeRepository.GetWhere(s => s.Name == scopeName)
                     .FirstOrDefaultAsync(cancellationToken);
 
-                
+
                 if (existingScope == null)
                 {
                     // Create ScopeDto for Keycloak
@@ -85,7 +82,7 @@ public class CreateResourceCommandHandler(
 
                     if (string.IsNullOrEmpty(keycloakScopeName))
                     {
-                        return Result<Guid>.Failure(_localizer["FailedToCreateScopeInKeycloak"] ?? "Failed to create scope in Keycloak");
+                        return Result<Guid>.Failure(_localizer["FailedToCreateScopeInKeycloak"]);
                     }
 
                     // Get the created scope from Keycloak to get its ID
@@ -95,10 +92,22 @@ public class CreateResourceCommandHandler(
                         keycloakScopeName,
                         adminToken,
                         cancellationToken);
+                    // Check if createdScope or its Id is null
+                    if (createdScope == null || string.IsNullOrEmpty(createdScope.Id))
+                    {
+                        return Result<Guid>.Failure(_localizer["FailedToRetrieveCreatedScope"]);
+                    }
+
+                    // Parse the scope ID safely
+                    if (!Guid.TryParse(createdScope.Id, out var parsedScopeId))
+                    {
+                        return Result<Guid>.Failure(_localizer["InvalidScopeId"]);
+                    }
+
                     // Create local entity
                     var scope = new Domain.Entities.Scope
                     {
-                        Id = Guid.Parse(createdScope.Id), // Keycloak scope IDs are strings, so we generate our own
+                        Id = parsedScopeId,
                         Name = request.CreateResourceRequest.ScopeNames.First(),
                         Description = request.CreateResourceRequest.ScopeNames.First(),
                         CreatedAt = DateTime.UtcNow,
@@ -128,7 +137,7 @@ public class CreateResourceCommandHandler(
             await _resourceRepository.CreateAsync(resource, cancellationToken);
             await _resourceRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(resource.Id, _localizer["ResourceCreatedSuccessfully"] ?? "Resource created successfully");
+            return Result<Guid>.Created(resource.Id, _localizer["ResourceCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

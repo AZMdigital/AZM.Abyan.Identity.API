@@ -41,7 +41,7 @@ public class CreateScopeCommandHandler(
 
             if (string.IsNullOrEmpty(keycloakScopeName))
             {
-                return Result<Guid>.Failure(_localizer["FailedToCreateScopeInKeycloak"] ?? "Failed to create scope in Keycloak");
+                return Result<Guid>.Failure(_localizer["FailedToCreateScopeInKeycloak"]);
             }
 
             // Get the created scope from Keycloak to get its ID
@@ -52,10 +52,21 @@ public class CreateScopeCommandHandler(
                 adminToken,
                 cancellationToken);
 
+            // Check if createdScope is null
+            if (createdScope == null || string.IsNullOrEmpty(createdScope.Id))
+            {
+                return Result<Guid>.Failure(_localizer["FailedToRetrieveCreatedScope"]);
+            }
+
             // Create local entity
+            if (!Guid.TryParse(createdScope.Id, out var scopeId))
+            {
+                return Result<Guid>.Failure(_localizer["InvalidScopeId"]);
+            }
+
             var scope = new Domain.Entities.Scope
             {
-                Id = Guid.Parse(createdScope.Id), // Keycloak scope IDs are strings, so we generate our own
+                Id = scopeId,
                 Name = request.CreateScopeRequest.Name,
                 Description = request.CreateScopeRequest.Name,
                 CreatedAt = DateTime.UtcNow,
@@ -65,7 +76,7 @@ public class CreateScopeCommandHandler(
             await _scopeRepository.CreateAsync(scope, cancellationToken);
             await _scopeRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(scope.Id, _localizer["ScopeCreatedSuccessfully"] ?? "Scope created successfully");
+            return Result<Guid>.Created(scope.Id, _localizer["ScopeCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

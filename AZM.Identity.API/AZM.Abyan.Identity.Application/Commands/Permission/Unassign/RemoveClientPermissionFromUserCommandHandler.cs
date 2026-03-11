@@ -34,19 +34,19 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Unassign
                 var tenantId = await _realmResolverService.ResolveRealmIdAsync(request.Realm, cancellationToken);
                 if (!tenantId.HasValue)
                 {
-                    return Result<bool>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.Realm}' not found");
+                    return Result<bool>.Failure(_localizer["TenantNotFound"]);
                 }
 
                 // Parse UserId
                 if (!Guid.TryParse(request.AssignPermissionRequest.UserId, out var userId))
                 {
-                    return Result<bool>.Failure(_localizer["InvalidUserId"] ?? "Invalid user ID format");
+                    return Result<bool>.Failure(_localizer["InvalidUserId"]);
                 }
 
                 // Parse ClientId to Guid
                 if (!Guid.TryParse(request.AssignPermissionRequest.ClientId, out var clientIdGuid))
                 {
-                    return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
+                    return Result<bool>.Failure(_localizer["InvalidClientId"]);
                 }
                 // Get permission by name and clientId from database
                 var permission = await _permissionRepository
@@ -55,7 +55,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Unassign
 
                 if (permission == null)
                 {
-                    return Result<bool>.NotFound(_localizer["PermissionNotFound"] ?? $"permission '{request.AssignPermissionRequest.PermissionName}' not found for client '{request.AssignPermissionRequest.ClientId}'");
+                    return Result<bool>.NotFound(_localizer["PermissionNotFound"]);
                 }
 
                 // Find existing assignment
@@ -65,7 +65,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Unassign
 
                 if (existingAssignment == null)
                 {
-                    return Result<bool>.NotFound(_localizer["PermissionAssignmentNotFound"] ?? "Permission assignment not found");
+                    return Result<bool>.NotFound(_localizer["PermissionAssignmentNotFound"]);
                 }
                 // Remove role from Keycloak first
                 var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
@@ -81,7 +81,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Unassign
                 existingAssignment.SoftDelete();
                 _tenantUserPermissionRepository.Update(existingAssignment);
                 await _tenantUserPermissionRepository.SaveChangesAsync(cancellationToken);
-                return Result<bool>.Deleted(true, _localizer["PermissionRemovedSuccessfully"] ?? "Permission removed successfully");  
+                return Result<bool>.Deleted(true, _localizer["PermissionRemovedSuccessfully"]);  
             }
             catch (Exception ex)
             {

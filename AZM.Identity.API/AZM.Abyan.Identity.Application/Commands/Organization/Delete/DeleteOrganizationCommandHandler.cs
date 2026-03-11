@@ -7,21 +7,14 @@ using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Commands.Organization.Delete;
 
-public class DeleteOrganizationCommandHandler : IRequestHandler<DeleteOrganizationCommand, Result<bool>>
+public class DeleteOrganizationCommandHandler(
+    ITenantRepository tenantRepository,
+    IKeycloakService keycloakService,
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<DeleteOrganizationCommand, Result<bool>>
 {
-    private readonly ITenantRepository _tenantRepository;
-    private readonly IKeycloakService _keycloakService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public DeleteOrganizationCommandHandler(
-        ITenantRepository tenantRepository,
-        IKeycloakService keycloakService,
-        IStringLocalizer<SharedResource> localizer)
-    {
-        _tenantRepository = tenantRepository;
-        _keycloakService = keycloakService;
-        _localizer = localizer;
-    }
+    private readonly ITenantRepository _tenantRepository = tenantRepository;
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     public async Task<Result<bool>> Handle(DeleteOrganizationCommand request, CancellationToken cancellationToken)
     {

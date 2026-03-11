@@ -2,14 +2,9 @@ using AZM.Abyan.Identity.Application.DTOs.Roles;
 
 namespace AZM.Abyan.Identity.Application.Services;
 
-public class RoleService : IRoleService
+public class RoleService(IKeycloakService keycloakService) : IRoleService
 {
-    private readonly IKeycloakService _keycloakService;
-
-    public RoleService(IKeycloakService keycloakService)
-    {
-        _keycloakService = keycloakService;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
 
     public async Task<List<ClientRoleResponse>> GetClientRolesAsync(string realm, string clientId, CancellationToken cancellationToken = default)
     {

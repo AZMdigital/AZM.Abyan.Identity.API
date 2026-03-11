@@ -23,7 +23,7 @@ public class UpdateRoleCommandHandler(
             var role = await _roleRepository.GetByIdAsync(request.RoleId, cancellationToken);
             if (role == null)
             {
-                return Result<bool>.NotFound(_localizer["RoleNotFound"] ?? "Role not found");
+                return Result<bool>.NotFound(_localizer["RoleNotFound"]);
             }
 
             // Get admin token
@@ -45,7 +45,7 @@ public class UpdateRoleCommandHandler(
             _roleRepository.Update(role);
             await _roleRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Updated(true, _localizer["RoleUpdatedSuccessfully"] ?? "Role updated successfully");
+            return Result<bool>.Updated(true, _localizer["RoleUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

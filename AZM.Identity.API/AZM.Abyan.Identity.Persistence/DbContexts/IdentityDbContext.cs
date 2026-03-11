@@ -6,17 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Persistence.DbContexts;
 
-public class IdentityDbContext : DbContext
+public class IdentityDbContext(
+    DbContextOptions<IdentityDbContext> options,
+    ICurrentUserService? currentUserService = null) : DbContext(options)
 {
-    private readonly ICurrentUserService? _currentUserService;
+    private readonly ICurrentUserService? _currentUserService = currentUserService;
 
-    public IdentityDbContext(
-        DbContextOptions<IdentityDbContext> options,
-        ICurrentUserService? currentUserService = null)
-        : base(options)
-    {
-        _currentUserService = currentUserService;
-    }
     public DbSet<User> Users { get; set; }
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<Role> Roles { get; set; }
@@ -24,7 +19,7 @@ public class IdentityDbContext : DbContext
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<Scope> Scopes { get; set; }
     public DbSet<Policy> Policies { get; set; }
-    public DbSet<Resource> Resources { get;set; }
+    public DbSet<Resource> Resources { get; set; }
     public DbSet<Client> Clients { get; set; }
     public DbSet<TenantUserPermission> TenantUserPermissions { get; set; }
     public DbSet<License> Licenses { get; set; }
@@ -63,7 +58,7 @@ public class IdentityDbContext : DbContext
         var now = DateTime.UtcNow;
 
         // Get userId from Claims and parse to Guid
-        var currentUserId = _currentUserService.GetCurrentUserId();
+        var currentUserId = _currentUserService?.GetCurrentUserId();
 
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
@@ -73,7 +68,7 @@ public class IdentityDbContext : DbContext
                 case EntityState.Added:
                     entry.Entity.CreatedAt = now;
                     entry.Entity.CreatedBy = currentUserId ?? Guid.Empty;
-                    
+
                     break;
 
                 case EntityState.Modified:

@@ -23,7 +23,7 @@ public class DeleteResourceCommandHandler(
             var resource = await _resourceRepository.GetByIdAsync(request.ResourceId, cancellationToken);
             if (resource == null)
             {
-                return Result<bool>.NotFound(_localizer["ResourceNotFound"] ?? "Resource not found");
+                return Result<bool>.NotFound(_localizer["ResourceNotFound"]);
             }
 
             // Get admin token
@@ -42,7 +42,7 @@ public class DeleteResourceCommandHandler(
             _resourceRepository.Update(resource);
             await _resourceRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Deleted(true, _localizer["ResourceDeletedSuccessfully"] ?? "Resource deleted successfully");
+            return Result<bool>.Deleted(true, _localizer["ResourceDeletedSuccessfully"]);
         }
         catch (Exception ex)
         {

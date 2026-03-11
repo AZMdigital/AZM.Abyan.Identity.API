@@ -1,10 +1,8 @@
-using System;
-using System.Linq;
+using AZM.Abyan.Identity.Application.Common.Interfaces;
+using AZM.Abyan.Identity.Application.DTOs;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using AZM.Abyan.Identity.Application.Common.Interfaces;
-using AZM.Abyan.Identity.Application.DTOs;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 

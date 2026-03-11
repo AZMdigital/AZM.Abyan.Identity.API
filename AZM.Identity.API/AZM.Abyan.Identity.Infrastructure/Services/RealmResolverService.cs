@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class RealmResolverService : IRealmResolverService
+public class RealmResolverService(IRepository<Tenant, Guid> tenantRepository) : IRealmResolverService
 {
-    private readonly IRepository<Tenant, Guid> _tenantRepository;
-
-    public RealmResolverService(IRepository<Tenant, Guid> tenantRepository)
-    {
-        _tenantRepository = tenantRepository;
-    }
+    private readonly IRepository<Tenant, Guid> _tenantRepository = tenantRepository;
 
     public async Task<Guid?> ResolveRealmIdAsync(string realmName, CancellationToken cancellationToken = default)
     {

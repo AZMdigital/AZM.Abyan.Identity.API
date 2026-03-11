@@ -20,16 +20,11 @@ public class UpdateUserCommandHandler(
     {
         try
         {
-            // UserId from request is the Keycloak ID which is the same as entity Id
-            if (!Guid.TryParse(request.UpdateUserRequest.UserId, out var userId))
-            {
-                return Result<bool>.NotFound(_localizer["InvalidUserId"] ?? "Invalid user ID format");
-            }
-
+            var userId = Guid.Parse(request.UpdateUserRequest.UserId!);
             var user = await _repository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
-                return Result<bool>.NotFound(_localizer["UserNotFound"] ?? "User not found");
+                return Result<bool>.NotFound(_localizer["UserNotFound"]);
             }
 
             // Update user in Keycloak first
@@ -45,7 +40,7 @@ public class UpdateUserCommandHandler(
             _repository.Update(user);
             await _repository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Updated(true, _localizer["UserUpdatedSuccessfully"] ?? "User updated successfully");
+            return Result<bool>.Updated(true, _localizer["UserUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

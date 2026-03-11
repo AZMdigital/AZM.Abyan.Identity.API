@@ -1,4 +1,3 @@
-using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Domain.Entities.Base;
 using MediatR;

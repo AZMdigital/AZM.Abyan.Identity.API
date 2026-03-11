@@ -5,13 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class UserPermissionQueryService : IUserPermissionQueryService
+public class UserPermissionQueryService(IdentityDbContext dbContext) : IUserPermissionQueryService
 {
-    private readonly IdentityDbContext _dbContext;
-    public UserPermissionQueryService(IdentityDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly IdentityDbContext _dbContext = dbContext;
 
     public async Task<List<PermissionDto>> GetUserPermissionsAsync(string userId, CancellationToken cancellationToken = default)
     {
@@ -33,7 +29,7 @@ public class UserPermissionQueryService : IUserPermissionQueryService
                 Logic = "POSITIVE",
                 DecisionStrategy = "UNANIMOUS",
                 Resources = new List<string> { p.Resources.Name },
-                Scopes = new List<string> { p.Scope.Name },
+                Scopes = p.Scope != null ? new List<string> { p.Scope.Name } : new List<string>(),
                 Policies = new List<string> { p.Policy.Name }
             })
             .ToListAsync(cancellationToken);

@@ -14,29 +14,29 @@ public class ResourceDto
     public string? DisplayName { get; set; }
 
     [JsonPropertyName("scopes")]
-    public List<ScopeDto> Scopes { get; set; } = new();
+    public List<ScopeDto> Scopes { get; set; } = [];
 
     [JsonPropertyName("type")]
     public string Type { get; set; } = "urn:resource:api";
 
     [JsonPropertyName("uris")]
-    public List<string> Uris { get; set; } = new();
+    public List<string> Uris { get; set; } = [];
 }
 
 public class ScopeDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public required string Name { get; set; }
 }
 public class ScopeUpdateDto
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("displayName")]
     public string? DisplayName { get; set; }
@@ -62,7 +62,7 @@ public class PolicyDto
     public string DecisionStrategy { get; set; } = "UNANIMOUS";
     
     [JsonPropertyName("config")]
-    public Dictionary<string, object> Config { get; set; } = new();
+    public Dictionary<string, object> Config { get; set; } = [];
 }
 
 public class PermissionDto
@@ -83,11 +83,11 @@ public class PermissionDto
     public string DecisionStrategy { get; set; } = "UNANIMOUS";
     
     [JsonPropertyName("resources")]
-    public List<string> Resources { get; set; } = new(); // Resource Names or IDs
+    public List<string> Resources { get; set; } = []; // Resource Names or IDs
     
     [JsonPropertyName("scopes")]
-    public List<string> Scopes { get; set; } = new();
+    public List<string> Scopes { get; set; } = [];
 
     [JsonPropertyName("policies")]
-    public List<string> Policies { get; set; } = new();
+    public List<string> Policies { get; set; } = [];
 }

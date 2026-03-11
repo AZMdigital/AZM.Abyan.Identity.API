@@ -1,58 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 
-namespace AZM.Abyan.Identity.Application.Services
+namespace AZM.Abyan.Identity.Application.Services;
+
+public class EncryptionService(IConfiguration configuration) : IEncryptionService
 {
-    public class EncryptionService : IEncryptionService
+    private readonly string _key = configuration["EncryptionSettings:Key"]!;
+
+    public string Encrypt(string plainText)
     {
-        private readonly string _key;
+        using var aes = Aes.Create();
+        aes.Key = Encoding.UTF8.GetBytes(_key);
+        aes.GenerateIV();
 
-        public EncryptionService(IConfiguration configuration)
-        {
-            _key = configuration["EncryptionSettings:Key"];
-        }
+        var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-        public string Encrypt(string plainText)
-        {
-            using var aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(_key);
-            aes.GenerateIV();
+        using var ms = new MemoryStream();
+        ms.Write(aes.IV, 0, aes.IV.Length);
 
-            var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+        using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+        using var sw = new StreamWriter(cs);
 
-            using var ms = new MemoryStream();
-            ms.Write(aes.IV, 0, aes.IV.Length);
+        sw.Write(plainText);
 
-            using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-            using var sw = new StreamWriter(cs);
+        return Convert.ToBase64String(ms.ToArray());
+    }
 
-            sw.Write(plainText);
+    public string Decrypt(string cipherText)
+    {
+        var fullCipher = Convert.FromBase64String(cipherText);
 
-            return Convert.ToBase64String(ms.ToArray());
-        }
+        using var aes = Aes.Create();
+        aes.Key = Encoding.UTF8.GetBytes(_key);
 
-        public string Decrypt(string cipherText)
-        {
-            var fullCipher = Convert.FromBase64String(cipherText);
+        var iv = new byte[16];
+        Array.Copy(fullCipher, iv, iv.Length);
 
-            using var aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(_key);
+        aes.IV = iv;
 
-            var iv = new byte[16];
-            Array.Copy(fullCipher, iv, iv.Length);
+        using var ms = new MemoryStream(fullCipher, 16, fullCipher.Length - 16);
+        using var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
+        using var sr = new StreamReader(cs);
 
-            aes.IV = iv;
-
-            using var ms = new MemoryStream(fullCipher, 16, fullCipher.Length - 16);
-            using var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
-            using var sr = new StreamReader(cs);
-
-            return sr.ReadToEnd();
-        }
+        return sr.ReadToEnd();
     }
 }

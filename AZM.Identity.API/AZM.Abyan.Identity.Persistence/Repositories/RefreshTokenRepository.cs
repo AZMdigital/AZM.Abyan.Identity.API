@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Persistence.Repositories;
 
-public class RefreshTokenRepository : IRefreshTokenRepository
+public class RefreshTokenRepository(IdentityDbContext context) : IRefreshTokenRepository
 {
-    private readonly IdentityDbContext _context;
-
-    public RefreshTokenRepository(IdentityDbContext context)
-    {
-        _context = context;
-    }
+    private readonly IdentityDbContext _context = context;
 
     public async Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken ct)
     {

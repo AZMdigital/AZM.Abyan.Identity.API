@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AZM.Abyan.Identity.Persistence.Repositories;
 
-public class TenantRepository : ITenantRepository
+public class TenantRepository(IdentityDbContext context) : ITenantRepository
 {
-    private readonly IdentityDbContext _context;
-
-    public TenantRepository(IdentityDbContext context)
-    {
-        _context = context;
-    }
+    private readonly IdentityDbContext _context = context;
 
     public async Task<Tenant?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

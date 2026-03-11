@@ -1,41 +1,28 @@
-﻿using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using AZM.Abyan.Identity.Application.DTOs;
-using AZM.Abyan.Identity.Application.DTOs.Auth;
+﻿using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.DTOs.AuthZ;
 using AZM.Abyan.Identity.Application.DTOs.Clients;
-using AZM.Abyan.Identity.Application.DTOs.Groups;
 using AZM.Abyan.Identity.Application.DTOs.Organizations;
+using AZM.Abyan.Identity.Application.DTOs.ProtocolMappers;
 using AZM.Abyan.Identity.Application.DTOs.Realms;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.DTOs.Users;
 using AZM.Abyan.Identity.Application.Models;
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
-using Azure.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using static System.Net.WebRequestMethods;
 using System.Net.Http.Headers;
-using AZM.Abyan.Identity.Application.DTOs.ProtocolMappers;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class KeycloakService : IKeycloakService
+public class KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config, IConfiguration configuration) : IKeycloakService
 {
-    private readonly HttpClient _httpClient;
-    private readonly KeycloakConfiguration _config;
-    private readonly IConfiguration _configuration;
-
-    public KeycloakService(HttpClient httpClient, IOptions<KeycloakConfiguration> config, IConfiguration configuration)
-    {
-        _httpClient = httpClient;
-        _config = config.Value;
-        _configuration = configuration;
-    }
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly KeycloakConfiguration _config = config.Value;
+    private readonly IConfiguration _configuration = configuration;
 
     public async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken = default)
     {
@@ -386,19 +373,19 @@ public class KeycloakService : IKeycloakService
     //    await _httpClient.PostAsync(logoutEndpoint, content, cancellationToken);
     //}
     public async Task LogoutUserAsync(string userId, CancellationToken cancellationToken = default)
-{
-    var adminToken = await GetAdminTokenAsync(cancellationToken);
+    {
+        var adminToken = await GetAdminTokenAsync(cancellationToken);
 
-    var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/logout";
+        var endpoint = $"/admin/realms/{_config.Realm}/users/{userId}/logout";
 
-    var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-    request.Headers.Authorization =
-        new AuthenticationHeaderValue("Bearer", adminToken);
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
 
-    var response = await _httpClient.SendAsync(request, cancellationToken);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
-    response.EnsureSuccessStatusCode();
-}
+        response.EnsureSuccessStatusCode();
+    }
     private async Task<string?> GetOrganizationIdByNameAsync(string realm, string organizationName, string adminToken, CancellationToken cancellationToken)
     {
         var endpoint = $"/admin/realms/{realm}/organizations?search={organizationName}";
@@ -415,7 +402,7 @@ public class KeycloakService : IKeycloakService
         return orgs?.FirstOrDefault(o => o.name == organizationName)?.id;
     }
 
-    public async Task<List<OrganizationDto>> GetUserOrganizationsAsync(string userId,string adminToken,CancellationToken cancellationToken)
+    public async Task<List<OrganizationDto>> GetUserOrganizationsAsync(string userId, string adminToken, CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(
             HttpMethod.Get,

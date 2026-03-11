@@ -1,174 +1,132 @@
+using AZM.Abyan.Identity.API.Controllers.Base;
 using AZM.Abyan.Identity.Application.Commands.Role.Assign;
 using AZM.Abyan.Identity.Application.Commands.Role.Create;
 using AZM.Abyan.Identity.Application.Commands.Role.Delete;
 using AZM.Abyan.Identity.Application.Commands.Role.Unassign;
 using AZM.Abyan.Identity.Application.Commands.Role.Update;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
-using AZM.Abyan.Identity.Application.Resources;
-using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
-using MediatR;
+using AZM.Abyan.Identity.Application.Queries.Role.GetClientRoles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.API.Controllers;
 
 [ApiController]
 [Route("api/realms/{realm}/[controller]")]
-public class RolesController : ControllerBase
+public class RolesController : BaseController
 {
-    private readonly IRoleService _roleService;
-    private readonly IMediator _mediator;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public RolesController(IRoleService roleService, IMediator mediator, IStringLocalizer<SharedResource> localizer)
-    {
-        _roleService = roleService;
-        _mediator = mediator;
-        _localizer = localizer;
-    }
 
     [HttpGet("clients/{clientId}")]
     [AllowAnonymous]
-    public async Task<ActionResult<List<ClientRoleResponse>>> GetClientRoles(string realm, Guid clientId, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> GetClientRoles(string realm, Guid clientId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
-            return Ok(roles);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(new GetClientRolesQuery(realm, clientId.ToString()), cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost("clients/{clientId}")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateClientRole(string realm, Guid clientId, [FromBody] CreateClientRoleRequest request, CancellationToken cancellationToken)
     {
-        try
+        var command = new CreateRoleCommand
         {
-            // clientId parameter is the Keycloak client string ID (e.g., "formbuilder")
-            CreateRoleCommand command = new CreateRoleCommand();
-            command.Name = request.Name;
-            command.Description = request.Description;
-            command.Realm = realm;
-            command.ClientId = clientId; // Keycloak client string ID (e.g., "formbuilder")
+            Name = request.Name,
+            Description = request.Description,
+            Realm = realm,
+            ClientId = clientId
+        };
 
-            var result = await _mediator.Send(command);
-            var response = StatusCode(result.StatusCode, result);
-            return response;
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut("clients/{clientId}/{roleName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateClientRole(string realm, Guid clientId, string roleName, [FromBody] UpdateClientRoleRequest request, CancellationToken cancellationToken)
     {
-        try
+        // Get role by name to find the local ID
+        var rolesResult = await Mediator.Send(new GetClientRolesQuery(realm, clientId.ToString()), cancellationToken);
+        if (!rolesResult.IsSuccess || rolesResult.Data == null)
+            return StatusCode(rolesResult.StatusCode, rolesResult);
+
+        var role = rolesResult.Data.FirstOrDefault(r => r.Name == roleName);
+        if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
+            return NotFound(new { message = Localizer["RoleNotFound"] });
+
+        var command = new UpdateRoleCommand
         {
-            // Get role by name to find the local ID
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
-            var role = roles.FirstOrDefault(r => r.Name == roleName);
+            RoleId = roleIdGuid,
+            UpdateRoleRequest = request,
+            Realm = realm,
+            KeycloakClientId = clientId.ToString(),
+            RoleName = roleName // Original role name for Keycloak update
+        };
 
-            if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
-            {
-                return NotFound(new { message = _localizer["RoleNotFound"] });
-            }
-
-            var command = new UpdateRoleCommand
-            {
-                RoleId = roleIdGuid,
-                UpdateRoleRequest = request,
-                Realm = realm,
-                KeycloakClientId = clientId.ToString(),
-                RoleName = roleName // Original role name for Keycloak update
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("clients/{clientId}/{roleName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteClientRole(string realm, Guid clientId, string roleName, CancellationToken cancellationToken)
     {
-        try
+        // Get role by name to find the local ID
+        var rolesResult = await Mediator.Send(new GetClientRolesQuery(realm, clientId.ToString()), cancellationToken);
+        if (!rolesResult.IsSuccess || rolesResult.Data == null)
+            return StatusCode(rolesResult.StatusCode, rolesResult);
+
+        var role = rolesResult.Data.FirstOrDefault(r => r.Name == roleName);
+        if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
+            return NotFound(new { message = "Role not found" });
+
+        var command = new DeleteRoleCommand
         {
-            // Get role by name to find the local ID
-            var roles = await _roleService.GetClientRolesAsync(realm, clientId.ToString(), cancellationToken);
-            var role = roles.FirstOrDefault(r => r.Name == roleName);
+            RoleId = roleIdGuid,
+            Realm = realm,
+            KeycloakClientId = clientId.ToString(),
+            RoleName = roleName
+        };
 
-            if (role == null || string.IsNullOrEmpty(role.Id) || !Guid.TryParse(role.Id, out var roleIdGuid))
-            {
-                return NotFound(new { message = _localizer["RoleNotFound"] });
-            }
-
-            var command = new DeleteRoleCommand
-            {
-                RoleId = roleIdGuid,
-                Realm = realm,
-                KeycloakClientId = clientId.ToString(),
-                RoleName = roleName
-            };
-
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost("assign")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> AssignClientRoleToUser(string realm, Guid clientId, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
-        try
+        request.ClientId = clientId.ToString();
+        var command = new AssignClientRoleToUserCommand
         {
-            request.ClientId = clientId.ToString();
-            var command = new AssignClientRoleToUserCommand
-            {
-                AssignRoleRequest = request,
-                Realm = realm
-            };
+            AssignRoleRequest = request,
+            Realm = realm
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost("unassign")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> UnassignClientRoleFromUser(string realm, Guid clientId, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
     {
-        try
+        request.ClientId = clientId.ToString();
+        var command = new RemoveClientRoleFromUserCommand
         {
-            request.ClientId = clientId.ToString();
-            var command = new RemoveClientRoleFromUserCommand
-            {
-                AssignRoleRequest = request,
-                Realm = realm
-            };
+            AssignRoleRequest = request,
+            Realm = realm
+        };
 
-            var result = await _mediator.Send(command, cancellationToken);
-            return StatusCode(result.StatusCode, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = _localizer["OperationFailed"] ?? ex.Message });
-        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return StatusCode(result.StatusCode, result);
     }
 }
-

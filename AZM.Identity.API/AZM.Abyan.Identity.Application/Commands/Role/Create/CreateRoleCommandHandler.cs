@@ -2,7 +2,6 @@ using AZM.Abyan.Identity.Application.DTOs.Responses;
 using AZM.Abyan.Identity.Application.DTOs.Roles;
 using AZM.Abyan.Identity.Application.Resources;
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Entities;
 using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using MediatR;
 using Microsoft.Extensions.Localization;
@@ -25,19 +24,6 @@ public class CreateRoleCommandHandler(
             // Get admin token
             var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
 
-            //// Resolve client internal ID from configuration
-            //var clientInternalId = ResolveClientInternalId(request.Realm, request.ClientId);
-            //if (string.IsNullOrEmpty(clientInternalId))
-            //{
-            //    return Result<Guid>.Failure(_localizer["ClientNotFound"] ?? $"Client '{request.KeycloakClientId}' not found in configuration for realm '{request.Realm}'");
-            //}
-
-            // Parse ClientInternalId to Guid for local ClientId
-            //if (!Guid.TryParse(clientInternalId, out var clientIdGuid))
-            //{
-            //    return Result<Guid>.Failure(_localizer["InvalidClientInternalId"] ?? $"Invalid client internal ID format: {clientInternalId}");
-            //}
-
             // Create role in Keycloak first
             var createRoleRequest = new CreateClientRoleRequest
             {
@@ -53,7 +39,7 @@ public class CreateRoleCommandHandler(
 
             if (createdRole == null || string.IsNullOrEmpty(createdRole.Id) || !Guid.TryParse(createdRole.Id, out var keycloakRoleId))
             {
-                return Result<Guid>.Failure(_localizer["FailedToGetRoleIdFromKeycloak"] ?? "Failed to get role ID from Keycloak");
+                return Result<Guid>.Failure(_localizer["FailedToGetRoleIdFromKeycloak"]);
             }
 
             // Create local entity with ID from Keycloak
@@ -71,35 +57,12 @@ public class CreateRoleCommandHandler(
             await _roleRepository.CreateAsync(role, cancellationToken);
             await _roleRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(role.Id, _localizer["RoleCreatedSuccessfully"] ?? "Role created successfully");
+            return Result<Guid>.Created(role.Id, _localizer["RoleCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {
             return Result<Guid>.Failure(ex.Message);
         }
     }
-
-    //private string? ResolveClientInternalId(string realm, string clientId)
-    //{
-    //    // Find tenant configuration for the realm
-    //    if (!_keycloakConfigurations.Tenants.TryGetValue(realm, out var tenantConfig))
-    //    {
-    //        return null;
-    //    }
-
-    //    // Check KeycloakFormbuilder
-    //    if (tenantConfig.KeycloakFormbuilder.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-    //    {
-    //        return tenantConfig.KeycloakFormbuilder.ClientInternalId;
-    //    }
-
-    //    // Check KeycloakWorkflow
-    //    if (tenantConfig.KeycloakWorkflow.ClientId.Equals(clientId, StringComparison.OrdinalIgnoreCase))
-    //    {
-    //        return tenantConfig.KeycloakWorkflow.ClientInternalId;
-    //    }
-
-    //    return null;
-    //}
 }
 

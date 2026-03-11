@@ -24,7 +24,7 @@ public class UpdateScopeCommandHandler(
             var scope = await _scopeRepository.GetByIdAsync(request.ScopeId, cancellationToken);
             if (scope == null)
             {
-                return Result<bool>.NotFound(_localizer["ScopeNotFound"] ?? "Scope not found");
+                return Result<bool>.NotFound(_localizer["ScopeNotFound"]);
             }
 
             // Get admin token
@@ -54,7 +54,7 @@ public class UpdateScopeCommandHandler(
             _scopeRepository.Update(scope);
             await _scopeRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<bool>.Updated(true, _localizer["ScopeUpdatedSuccessfully"] ?? "Scope updated successfully");
+            return Result<bool>.Updated(true, _localizer["ScopeUpdatedSuccessfully"]);
         }
         catch (Exception ex)
         {

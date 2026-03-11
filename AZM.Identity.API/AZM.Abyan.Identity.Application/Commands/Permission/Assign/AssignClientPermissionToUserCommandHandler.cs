@@ -26,7 +26,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Assign
     {
         private readonly IRepository<TenantUserPermission, Guid> _tenantUserPermissionRepository = tenantUserPermissionRepository;
         private readonly IRepository<Domain.Entities.User, Guid> _userRepository = userRepository;
-        private readonly IRepository<Domain.Entities.Permission, Guid> _PermissionsRepository = PermissionsRepository;
+        private readonly IRepository<Domain.Entities.Permission, Guid> _permissionsRepository = PermissionsRepository;
         private readonly IRepository<Tenant, Guid> _tenantRepository = tenantRepository;
         private readonly IKeycloakService _keycloakService = keycloakService;
         private readonly IRealmResolverService _realmResolverService = realmResolverService;
@@ -39,33 +39,33 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Assign
                 var tenantId = await _realmResolverService.ResolveRealmIdAsync(request.Realm, cancellationToken);
                 if (!tenantId.HasValue)
                 {
-                    return Result<bool>.Failure(_localizer["TenantNotFound"] ?? $"Tenant/Realm '{request.Realm}' not found");
+                    return Result<bool>.Failure(_localizer["TenantNotFound"]);
                 }
 
                 // Parse UserId
                 if (!Guid.TryParse(request.AssignPermissionRequest.UserId, out var userId))
                 {
-                    return Result<bool>.Failure(_localizer["InvalidUserId"] ?? "Invalid user ID format");
+                    return Result<bool>.Failure(_localizer["InvalidUserId"]);
                 }
 
                 // Verify user exists
                 var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
                 if (user == null)
                 {
-                    return Result<bool>.NotFound(_localizer["UserNotFound"] ?? "User not found");
+                    return Result<bool>.NotFound(_localizer["UserNotFound"]);
                 }
 
                 // Parse ClientId to Guid
                 if (!Guid.TryParse(request.AssignPermissionRequest.ClientId, out var clientIdGuid))
                 {
-                    return Result<bool>.Failure(_localizer["InvalidClientId"] ?? "Invalid client ID format");
+                    return Result<bool>.Failure(_localizer["InvalidClientId"]);
                 }
-                var Permissions = await _PermissionsRepository
+                var Permissions = await _permissionsRepository
                .GetWhere(r => r.Name == request.AssignPermissionRequest.PermissionName && r.IsDeleted == false)
                .FirstOrDefaultAsync(cancellationToken);
                 if (Permissions == null)
                 {
-                    return Result<bool>.NotFound(_localizer["PermissionNotFound"] ?? $"Permission '{request.AssignPermissionRequest.PermissionName}' not found for client '{request.AssignPermissionRequest.ClientId}'");
+                    return Result<bool>.NotFound(_localizer["PermissionNotFound"]);
                 }
                 // Check if assignment already exists
                 var existingAssignment = await _tenantUserPermissionRepository
@@ -74,7 +74,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Assign
 
                 if (existingAssignment != null)
                 {
-                    return Result<bool>.Conflict(_localizer["PermissionUpdatedSuccessfully"] ?? "Permission is already assigned to this user");
+                    return Result<bool>.Conflict(_localizer["PermissionUpdatedSuccessfully"]);
                 }
                 var adminToken = await _keycloakService.GetAdminTokenAsync(cancellationToken);
                 await _keycloakService.AssignClientRoleToUserAsync(
@@ -96,7 +96,7 @@ namespace AZM.Abyan.Identity.Application.Commands.Permission.Assign
                 };
                 await _tenantUserPermissionRepository.CreateAsync(tenantUserPermission, cancellationToken);
                 await _tenantUserPermissionRepository.SaveChangesAsync(cancellationToken);
-                return Result<bool>.Success(true, _localizer["PermissionAssignedSuccessfully"] ?? "Permission assigned successfully");
+                return Result<bool>.Success(true, _localizer["PermissionAssignedSuccessfully"]);
             }
             catch (Exception ex)
             {

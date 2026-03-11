@@ -30,16 +30,6 @@ public class CreatePolicyCommandHandler(
 
             string keycloakPolicyId = string.Empty;
 
-            //// For other policy types, create using PolicyDto
-            //var policyDto = new PolicyDto
-            //{
-            //    Name = request.CreatePolicyRequest.Name,
-            //    Type = "role",
-            //    Logic = "POSITIVE",
-            //    DecisionStrategy = "UNANIMOUS",
-            //    Config = request.CreatePolicyRequest.Config
-            //};
-
             // Note: We need a generic CreatePolicyAsync method, but for now use role policy
             // This would need to be extended based on policy type
             if (request.CreatePolicyRequest.RoleNames.Any())
@@ -56,7 +46,7 @@ public class CreatePolicyCommandHandler(
 
             if (string.IsNullOrEmpty(keycloakPolicyId))
             {
-                return Result<Guid>.Failure(_localizer["FailedToCreatePolicyInKeycloak"] ?? "Failed to create policy in Keycloak");
+                return Result<Guid>.Failure(_localizer["FailedToCreatePolicyInKeycloak"]);
             }
 
             // Get role for database (assuming first role)
@@ -86,7 +76,7 @@ public class CreatePolicyCommandHandler(
             await _policyRepository.CreateAsync(policy, cancellationToken);
             await _policyRepository.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Created(policy.Id, _localizer["PolicyCreatedSuccessfully"] ?? "Policy created successfully");
+            return Result<Guid>.Created(policy.Id, _localizer["PolicyCreatedSuccessfully"]);
         }
         catch (Exception ex)
         {

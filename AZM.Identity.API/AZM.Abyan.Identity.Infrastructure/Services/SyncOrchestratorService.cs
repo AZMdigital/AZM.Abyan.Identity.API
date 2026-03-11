@@ -1,53 +1,36 @@
 using AZM.Abyan.Identity.Application.Services;
-using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using AZM.Abyan.Identity.Domain.Entities;
+using AZM.Abyan.Identity.Domain.Interfaces.GenericRepository;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AZM.Abyan.Identity.Infrastructure.Services;
 
-public class SyncOrchestratorService : ISyncOrchestratorService
+public class SyncOrchestratorService(
+    IKeycloakService keycloakService,
+    ITenantSyncService tenantSyncService,
+    IUserSyncService userSyncService,
+    IClientSyncService clientSyncService,
+    IRoleSyncService roleSyncService,
+    IScopeSyncService scopeSyncService,
+    IResourceSyncService resourceSyncService,
+    IPolicySyncService policySyncService,
+    IPermissionKeycloakSyncService permissionSyncService,
+    ITenantUserRoleSyncService tenantUserRoleSyncService,
+    IRepository<Tenant, Guid> tenantRepository,
+    IRepository<Client, Guid> clientRepository) : ISyncOrchestratorService
 {
-    private readonly IKeycloakService _keycloakService;
-    private readonly ITenantSyncService _tenantSyncService;
-    private readonly IUserSyncService _userSyncService;
-    private readonly IClientSyncService _clientSyncService;
-    private readonly IRoleSyncService _roleSyncService;
-    private readonly IScopeSyncService _scopeSyncService;
-    private readonly IResourceSyncService _resourceSyncService;
-    private readonly IPolicySyncService _policySyncService;
-    private readonly IPermissionKeycloakSyncService _permissionSyncService;
-    private readonly ITenantUserRoleSyncService _tenantUserRoleSyncService;
-    private readonly IRepository<Tenant, Guid> _tenantRepository;
-    private readonly IRepository<Client, Guid> _clientRepository;
-
-    public SyncOrchestratorService(
-        IKeycloakService keycloakService,
-        ITenantSyncService tenantSyncService,
-        IUserSyncService userSyncService,
-        IClientSyncService clientSyncService,
-        IRoleSyncService roleSyncService,
-        IScopeSyncService scopeSyncService,
-        IResourceSyncService resourceSyncService,
-        IPolicySyncService policySyncService,
-        IPermissionKeycloakSyncService permissionSyncService,
-        ITenantUserRoleSyncService tenantUserRoleSyncService,
-        IRepository<Tenant, Guid> tenantRepository,
-        IRepository<Client, Guid> clientRepository)
-    {
-        _keycloakService = keycloakService;
-        _tenantSyncService = tenantSyncService;
-        _userSyncService = userSyncService;
-        _clientSyncService = clientSyncService;
-        _roleSyncService = roleSyncService;
-        _scopeSyncService = scopeSyncService;
-        _resourceSyncService = resourceSyncService;
-        _policySyncService = policySyncService;
-        _permissionSyncService = permissionSyncService;
-        _tenantUserRoleSyncService = tenantUserRoleSyncService;
-        _tenantRepository = tenantRepository;
-        _clientRepository = clientRepository;
-    }
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly ITenantSyncService _tenantSyncService = tenantSyncService;
+    private readonly IUserSyncService _userSyncService = userSyncService;
+    private readonly IClientSyncService _clientSyncService = clientSyncService;
+    private readonly IRoleSyncService _roleSyncService = roleSyncService;
+    private readonly IScopeSyncService _scopeSyncService = scopeSyncService;
+    private readonly IResourceSyncService _resourceSyncService = resourceSyncService;
+    private readonly IPolicySyncService _policySyncService = policySyncService;
+    private readonly IPermissionKeycloakSyncService _permissionSyncService = permissionSyncService;
+    private readonly ITenantUserRoleSyncService _tenantUserRoleSyncService = tenantUserRoleSyncService;
+    private readonly IRepository<Tenant, Guid> _tenantRepository = tenantRepository;
+    private readonly IRepository<Client, Guid> _clientRepository = clientRepository;
 
     public async Task<SyncResult> SyncAllAsync(CancellationToken cancellationToken = default)
     {

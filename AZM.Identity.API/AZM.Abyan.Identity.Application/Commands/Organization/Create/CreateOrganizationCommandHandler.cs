@@ -9,24 +9,16 @@ using Microsoft.Extensions.Localization;
 
 namespace AZM.Abyan.Identity.Application.Commands.Organization.Create;
 
-public class CreateOrganizationCommandHandler : IRequestHandler<CreateOrganizationCommand, Result<Guid>>
+public class CreateOrganizationCommandHandler(
+    ITenantRepository tenantRepository,
+    IKeycloakService keycloakService,
+    IRealmResolverService realmResolverService,
+    IStringLocalizer<SharedResource> localizer) : IRequestHandler<CreateOrganizationCommand, Result<Guid>>
 {
-    private readonly ITenantRepository _tenantRepository;
-    private readonly IKeycloakService _keycloakService;
-    private readonly IRealmResolverService _realmResolverService;
-    private readonly IStringLocalizer<SharedResource> _localizer;
-
-    public CreateOrganizationCommandHandler(
-        ITenantRepository tenantRepository,
-        IKeycloakService keycloakService,
-        IRealmResolverService realmResolverService,
-        IStringLocalizer<SharedResource> localizer)
-    {
-        _tenantRepository = tenantRepository;
-        _keycloakService = keycloakService;
-        _realmResolverService = realmResolverService;
-        _localizer = localizer;
-    }
+    private readonly ITenantRepository _tenantRepository = tenantRepository;
+    private readonly IKeycloakService _keycloakService = keycloakService;
+    private readonly IRealmResolverService _realmResolverService = realmResolverService;
+    private readonly IStringLocalizer<SharedResource> _localizer = localizer;
 
     public async Task<Result<Guid>> Handle(CreateOrganizationCommand request, CancellationToken cancellationToken)
     {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -122,9 +122,6 @@
   </data>
   <data name="ClientDeletedSuccessfully" xml:space="preserve">
     <value>تم حذف العميل بنجاح</value>
-  </data>
-  <data name="ClientNotFound" xml:space="preserve">
-    <value>العميل غير موجود</value>
   </data>
   <data name="ClientUpdateSuccessfully" xml:space="preserve">
     <value>تم تعديل العميل بنجاح </value>
@@ -294,18 +291,7 @@
   <data name="PermissionRemovedSuccessfully" xml:space="preserve">
     <value>تم الصلاحية الدور بنجاح</value>
   </data>
-
-
-
-
-
-
-
-
-
-
-
-<data name="InvalidLicenseFileFormat" xml:space="preserve">
+  <data name="InvalidLicenseFileFormat" xml:space="preserve">
     <value>صيغة ملف الترخيص غير صحيحة.</value>
   </data>
   <data name="LicenseSignatureInvalid" xml:space="preserve">
@@ -316,6 +302,9 @@
   </data>
   <data name="TenantNotFoundOrInactive" xml:space="preserve">
     <value>لم يتم العثور على المستأجر أو أنه غير نشط.</value>
+  </data>
+  <data name="ClientNotFound" xml:space="preserve">
+    <value>العميل{0}'  غير موجود</value>
   </data>
   <data name="TenantRealmNotFound" xml:space="preserve">
     <value>لم يتم العثور على حوزة المستأجر في Keycloak.</value>
@@ -359,5 +348,43 @@
   <data name="AllTokensRevoked" xml:space="preserve">
     <value>تم إلغاء جميع رموز التحديث للترخيص {0}</value>
   </data>
-
+  <data name="UpdateClientRequestRequired" xml:space="preserve">
+    <value>طلب تحديث العميل مطلوب.</value>
+  </data>
+  <data name="LicenseFileRequired" xml:space="preserve">
+    <value>ملف الترخيص مطلوب.</value>
+  </data>
+  <data name="LicenseFileInvalidJson" xml:space="preserve">
+    <value>يجب أن يكون ملف الترخيص بتنسيق JSON صالح.</value>
+  </data>
+  <data name="ClientScopeIdRequired" xml:space="preserve">
+    <value>معرف نطاق العميل مطلوب.</value>
+  </data>
+  <data name="MapperIdRequired" xml:space="preserve">
+    <value>معرف المخطط مطلوب.</value>
+  </data>
+  <data name="ClientScopeNameRequired" xml:space="preserve">
+    <value>اسم نطاق العميل مطلوب.</value>
+  </data>
+  <data name="MapperNameRequired" xml:space="preserve">
+    <value>اسم المخطط مطلوب.</value>
+  </data>
+  <data name="SyncSuccess" xml:space="preserve">
+    <value>اكتملت المزامنة بنجاح</value>
+  </data>
+  <data name="SyncFailed" xml:space="preserve">
+    <value>فشلت المزامنة</value>
+  </data>
+  <data name="InvalidClientInternalId" xml:space="preserve">
+    <value>تنسيق المعرف الداخلي للعميل غير صالح</value>
+  </data>
+  <data name="NewPasswordRequired" xml:space="preserve">
+    <value>كلمة المرور الجديدة مطلوبة.</value>
+  </data>
+  <data name="FailedToRetrieveCreatedScope" xml:space="preserve">
+    <value>فشل استرداد النطاق الذي تم إنشاؤه.</value>
+  </data>
+  <data name="OrganizationNameRequired" xml:space="preserve">
+    <value>اسم المنظمة مطلوب</value>
+  </data>
 </root>

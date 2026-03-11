@@ -1,4 +1,4 @@
-using AZM.Abyan.Identity.Application.Commands.License.RefreshToken;
+using AZM.Abyan.Identity.Application.DTOs.Auth;
 using AZM.Abyan.Identity.Application.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;

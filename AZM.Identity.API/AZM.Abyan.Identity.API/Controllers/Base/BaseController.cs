@@ -10,7 +10,7 @@ public abstract class BaseController : ControllerBase
     private IMediator? _mediator;
     protected IMediator Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<IMediator>();
 
-    private IStringLocalizer<SharedResource>? _localizer;
+    private IStringLocalizer<SharedResource>? localizer;
     protected IStringLocalizer<SharedResource> Localizer =>
-        _localizer ??= HttpContext.RequestServices.GetRequiredService<IStringLocalizer<SharedResource>>();
+        localizer ??= HttpContext.RequestServices.GetRequiredService<IStringLocalizer<SharedResource>>();
 }
